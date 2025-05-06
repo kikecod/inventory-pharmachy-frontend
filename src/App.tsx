@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -22,8 +22,19 @@ import { SettingsPage } from './pages/SettingsPage';
 import { useAuthStore } from './store/authStore';
 
 function App() {
-  // Check authentication status
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -57,7 +68,7 @@ function App() {
         <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} />
         
         {/* Protected Routes */}
-        <Route path="/" element={<AppLayout />}>
+        <Route path="/" element={isAuthenticated ? <AppLayout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />

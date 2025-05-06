@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { User } from '../types';
+import { authService } from '../services/api/auth.service';
 
 interface AuthState {
   user: User | null;
@@ -9,45 +10,56 @@ interface AuthState {
   register: (name: string, apellido: string, email: string, password: string, rol: string) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => void;
+  checkAuth: () => void;
 }
-
-const API_URL = 'http://localhost:8082';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
+
+  checkAuth: () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
+      try {
+        const user = JSON.parse(userData);
+        set({ user, isAuthenticated: true, isLoading: false });
+      } catch (error) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      }
+    } else {
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
 
   login: async (email: string, password: string) => {
     set({ isLoading: true });
     
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await authService.login({ email, password });
       
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-      
-      const data = await response.json();
-      
-      // Store token in localStorage
+      // Store token and user data in localStorage
       localStorage.setItem('token', data.token);
-      
-      // Transform API response to match our User type
-      const user: User = {
+      localStorage.setItem('user', JSON.stringify({
         id: data.usuario.id.toString(),
         name: data.usuario.nombre,
         email: data.usuario.email,
         role: data.usuario.rol.toLowerCase(),
-      };
+      }));
       
-      set({ user, isAuthenticated: true });
+      set({ 
+        user: {
+          id: data.usuario.id.toString(),
+          name: data.usuario.nombre,
+          email: data.usuario.email,
+          role: data.usuario.rol.toLowerCase(),
+        }, 
+        isAuthenticated: true 
+      });
     } catch (error) {
       throw error;
     } finally {
@@ -59,38 +71,32 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre,
-          apellido,
-          email,
-          password,
-          rol,
-        }),
+      const data = await authService.register({
+        nombre,
+        apellido,
+        email,
+        password,
+        rol,
       });
       
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-      
-      const data = await response.json();
-      
-      // Store token in localStorage
+      // Store token and user data in localStorage
       localStorage.setItem('token', data.token);
-      
-      // Transform API response to match our User type
-      const user: User = {
+      localStorage.setItem('user', JSON.stringify({
         id: data.usuario.id.toString(),
         name: data.usuario.nombre,
         email: data.usuario.email,
         role: data.usuario.rol.toLowerCase(),
-      };
+      }));
       
-      set({ user, isAuthenticated: true });
+      set({ 
+        user: {
+          id: data.usuario.id.toString(),
+          name: data.usuario.nombre,
+          email: data.usuario.email,
+          role: data.usuario.rol.toLowerCase(),
+        }, 
+        isAuthenticated: true 
+      });
     } catch (error) {
       throw error;
     } finally {
@@ -100,12 +106,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     set({ user: null, isAuthenticated: false });
   },
   
   updateProfile: (userData) => {
-    set((state) => ({
-      user: state.user ? { ...state.user, ...userData } : null,
-    }));
+    set((state) => {
+      const updatedUser = state.user ? { ...state.user, ...userData } : null;
+      if (updatedUser) {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      return { user: updatedUser };
+    });
   },
 }));

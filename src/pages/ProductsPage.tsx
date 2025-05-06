@@ -17,11 +17,17 @@ export const ProductsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   
-  const { products, categories, isLoading, fetchProducts, fetchCategories, addProduct, updateProduct, deleteProduct } = useProductStore();
+  const { products, categories, isLoading, error, fetchProducts, fetchCategories, addProduct, updateProduct, deleteProduct } = useProductStore();
   
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchProducts(), fetchCategories()]);
+      } catch (err) {
+        toast.error('Failed to load products');
+      }
+    };
+    loadData();
   }, [fetchProducts, fetchCategories]);
   
   useEffect(() => {
@@ -111,6 +117,15 @@ export const ProductsPage: React.FC = () => {
       toast.error('An error occurred. Please try again.');
     }
   };
+  
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <p className="text-error-600 text-lg mb-4">Failed to load products</p>
+        <Button onClick={() => fetchProducts()}>Retry</Button>
+      </div>
+    );
+  }
   
   if (isLoading) {
     return (
@@ -253,18 +268,11 @@ export const ProductsPage: React.FC = () => {
               required
             />
             
-            <Select
+            <Input
               label="Category"
               name="category"
               value={currentProduct.category || ''}
               onChange={handleInputChange}
-              options={[
-                { value: '', label: 'Select a category' },
-                ...categories.map((category) => ({
-                  value: category.name,
-                  label: category.name,
-                })),
-              ]}
               required
             />
             

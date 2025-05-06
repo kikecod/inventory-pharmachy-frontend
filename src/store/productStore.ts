@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Product, Category } from '../types';
+import { productsService } from '../services/api/products.service';
 
 interface ProductState {
   products: Product[];
@@ -14,75 +15,7 @@ interface ProductState {
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
 }
 
-// Mock data for demonstration
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Paracetamol 500mg',
-    description: 'Pain relief and fever reducer',
-    category: 'Analgesics',
-    sku: 'PARA-500',
-    price: 5.99,
-    costPrice: 2.50,
-    stockQuantity: 150,
-    expiryDate: '2025-12-31',
-    manufacturer: 'PharmaCo',
-    requiresPrescription: false,
-  },
-  {
-    id: '2',
-    name: 'Amoxicillin 250mg',
-    description: 'Antibiotic for bacterial infections',
-    category: 'Antibiotics',
-    sku: 'AMOX-250',
-    price: 12.99,
-    costPrice: 6.75,
-    stockQuantity: 85,
-    expiryDate: '2025-06-30',
-    manufacturer: 'MediPharm',
-    requiresPrescription: true,
-  },
-  {
-    id: '3',
-    name: 'Vitamin C 1000mg',
-    description: 'Dietary supplement for immune support',
-    category: 'Supplements',
-    sku: 'VITC-1000',
-    price: 8.50,
-    costPrice: 3.20,
-    stockQuantity: 200,
-    expiryDate: '2026-03-15',
-    manufacturer: 'VitaLife',
-    requiresPrescription: false,
-  },
-  {
-    id: '4',
-    name: 'Ibuprofen 400mg',
-    description: 'Anti-inflammatory and pain relief',
-    category: 'Analgesics',
-    sku: 'IBUP-400',
-    price: 6.99,
-    costPrice: 2.85,
-    stockQuantity: 120,
-    expiryDate: '2026-02-28',
-    manufacturer: 'PharmaCo',
-    requiresPrescription: false,
-  },
-  {
-    id: '5',
-    name: 'Loratadine 10mg',
-    description: 'Antihistamine for allergy relief',
-    category: 'Allergy',
-    sku: 'LORA-10',
-    price: 9.99,
-    costPrice: 4.50,
-    stockQuantity: 75,
-    expiryDate: '2025-08-15',
-    manufacturer: 'AllerCare',
-    requiresPrescription: false,
-  },
-];
-
+// Mock categories for demonstration
 const mockCategories: Category[] = [
   { id: '1', name: 'Analgesics', description: 'Pain relievers and fever reducers' },
   { id: '2', name: 'Antibiotics', description: 'Medications that kill or inhibit the growth of bacteria' },
@@ -101,13 +34,11 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      set({ products: mockProducts });
+      const products = await productsService.getProducts();
+      set({ products, isLoading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch products' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to fetch products', isLoading: false });
+      throw error;
     }
   },
   
@@ -115,13 +46,11 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      set({ categories: mockCategories });
+      // Using mock categories for now
+      set({ categories: mockCategories, isLoading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch categories' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to fetch categories', isLoading: false });
+      throw error;
     }
   },
   
@@ -129,21 +58,14 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const newProduct: Product = {
-        ...product,
-        id: Date.now().toString(),
-      };
-      
+      const newProduct = await productsService.createProduct(product);
       set((state) => ({
         products: [...state.products, newProduct],
+        isLoading: false,
       }));
     } catch (error) {
-      set({ error: 'Failed to add product' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to add product', isLoading: false });
+      throw error;
     }
   },
   
@@ -151,18 +73,16 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      const updatedProduct = await productsService.updateProduct(id, updates);
       set((state) => ({
         products: state.products.map((product) => 
-          product.id === id ? { ...product, ...updates } : product
+          product.id === id ? updatedProduct : product
         ),
+        isLoading: false,
       }));
     } catch (error) {
-      set({ error: 'Failed to update product' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to update product', isLoading: false });
+      throw error;
     }
   },
   
@@ -170,16 +90,14 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
+      await productsService.deleteProduct(id);
       set((state) => ({
         products: state.products.filter((product) => product.id !== id),
+        isLoading: false,
       }));
     } catch (error) {
-      set({ error: 'Failed to delete product' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to delete product', isLoading: false });
+      throw error;
     }
   },
   
@@ -187,9 +105,6 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
       const newCategory: Category = {
         ...category,
         id: Date.now().toString(),
@@ -197,11 +112,11 @@ export const useProductStore = create<ProductState>((set) => ({
       
       set((state) => ({
         categories: [...state.categories, newCategory],
+        isLoading: false,
       }));
     } catch (error) {
-      set({ error: 'Failed to add category' });
-    } finally {
-      set({ isLoading: false });
+      set({ error: 'Failed to add category', isLoading: false });
+      throw error;
     }
   },
 }));

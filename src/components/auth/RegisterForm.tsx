@@ -121,9 +121,10 @@ export const RegisterForm: React.FC = () => {
               value={rol}
               onChange={(e) => setRol(e.target.value)}
               options={[
-                { value: 'Gerente', label: 'Manager' },
-                { value: 'Empleado', label: 'Employee' },
-                { value: 'Farmaceutico', label: 'Pharmacist' },
+                { value: 'Gerente', label: 'Gerente' },
+                { value: 'Administrador', label: 'Administrador' },
+                { value: 'Cajero', label: 'Cajero' },
+                { value: 'Proveedor', label: 'Proveedor' },
               ]}
               required
             />
