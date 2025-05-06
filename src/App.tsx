@@ -1,0 +1,78 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
+// Layout
+import { AppLayout } from './components/layout/AppLayout';
+
+// Auth pages
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+
+// Main pages
+import { DashboardPage } from './pages/DashboardPage';
+import { InventoryPage } from './pages/InventoryPage';
+import { ProductsPage } from './pages/ProductsPage';
+import { SalesPage } from './pages/SalesPage';
+import { CustomersPage } from './pages/CustomersPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage';
+
+// Auth store
+import { useAuthStore } from './store/authStore';
+
+function App() {
+  // Check authentication status
+  const { isAuthenticated } = useAuthStore();
+
+  return (
+    <Router>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#ffffff',
+            color: '#374151',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            borderRadius: '0.375rem',
+          },
+          success: {
+            iconTheme: {
+              primary: '#16a34a',
+              secondary: '#ffffff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#dc2626',
+              secondary: '#ffffff',
+            },
+          },
+        }}
+      />
+      <Routes>
+        {/* Auth Routes */}
+        <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+        
+        {/* Protected Routes */}
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="sales" element={<SalesPage />} />
+          <Route path="customers" element={<CustomersPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+        
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
