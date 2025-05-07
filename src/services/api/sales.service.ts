@@ -23,7 +23,7 @@ export const salesService = {
 
   async createSale(sale: Omit<Sale, 'id'>): Promise<Sale> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/sales`, {
+    const response = await fetch(`${API_URL}/api/ventas`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(sale),
@@ -49,13 +49,14 @@ export const salesService = {
     return handleResponse(response);
   },
 
-  async generateInvoice(saleId: string): Promise<Blob> {
+  async generateInvoice(idVenta: number): Promise<Blob> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/sales/${saleId}/invoice`, {
+    const response = await fetch(`${API_URL}/api/facturas/${idVenta}}/pdf/`, {
       headers: getHeaders(token),
     });
     return response.blob();
   },
+
   async createSaleWithDetails(saleData: {
     idCliente: number;
     idUsuario: number;

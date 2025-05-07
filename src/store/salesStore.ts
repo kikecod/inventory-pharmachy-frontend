@@ -19,83 +19,11 @@ interface SalesState {
   cancelCurrentSale: () => void;
 }
 
-// Mock data for demonstration
-const mockSales: Sale[] = [
-  {
-    id: '1',
-    customerName: 'John Doe',
-    items: [
-      {
-        productId: '1',
-        productName: 'Paracetamol 500mg',
-        quantity: 2,
-        unitPrice: 5.99,
-        subtotal: 11.98,
-      },
-      {
-        productId: '3',
-        productName: 'Vitamin C 1000mg',
-        quantity: 1,
-        unitPrice: 8.50,
-        subtotal: 8.50,
-      },
-    ],
-    total: 20.48,
-    paymentMethod: 'cash',
-    status: 'completed',
-    createdAt: '2023-10-15T10:30:00Z',
-    staffId: '1',
-  },
-  {
-    id: '2',
-    customerName: 'Jane Smith',
-    items: [
-      {
-        productId: '2',
-        productName: 'Amoxicillin 250mg',
-        quantity: 1,
-        unitPrice: 12.99,
-        subtotal: 12.99,
-      },
-    ],
-    total: 12.99,
-    paymentMethod: 'card',
-    status: 'completed',
-    createdAt: '2023-10-16T14:45:00Z',
-    staffId: '1',
-  },
-  {
-    id: '3',
-    customerName: 'Michael Johnson',
-    items: [
-      {
-        productId: '4',
-        productName: 'Ibuprofen 400mg',
-        quantity: 1,
-        unitPrice: 6.99,
-        subtotal: 6.99,
-      },
-      {
-        productId: '5',
-        productName: 'Loratadine 10mg',
-        quantity: 2,
-        unitPrice: 9.99,
-        subtotal: 19.98,
-      },
-    ],
-    total: 26.97,
-    paymentMethod: 'insurance',
-    status: 'completed',
-    createdAt: '2023-10-17T16:20:00Z',
-    staffId: '1',
-  },
-];
-
 const emptySale: Omit<Sale, 'id'> = {
   customerName: '',
   items: [],
   total: 0,
-  paymentMethod: 'cash',
+  paymentMethod: 'Efectivo',
   status: 'pending',
   createdAt: new Date().toISOString(),
   staffId: '',
@@ -302,7 +230,14 @@ export const useSalesStore = create<SalesState>((set, get) => ({
           idProducto: parseInt(item.productId),
           cantidad: item.quantity,
           subtotal: item.subtotal,
-        })),
+        }))
+      }).then(async (data) => {
+        const idVenta = data.idVenta;
+      
+        // 🔽 Lógica para obtener y abrir PDF
+        const blob = await salesService.generateInvoice(idVenta);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
       });
   
       // Limpiar estado

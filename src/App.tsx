@@ -17,6 +17,7 @@ import { SalesPage } from './pages/SalesPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SucursalPage } from './pages/SucursalPage';
 
 // Auth store
 import { useAuthStore } from './store/authStore';
@@ -70,6 +71,7 @@ function App() {
         {/* Protected Routes */}
         <Route path="/" element={isAuthenticated ? <AppLayout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
+          <Route path="sucursal" element={<SucursalPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="products" element={<ProductsPage />} />

@@ -68,9 +68,21 @@ export type DashboardStats = {
 
 export type Customer = {
   idCliente: number;
+  ci: string;
   nombre: string;
   apellido: string;
   email: string;
   telefono: string;
   direccion: string;
 };
+
+// src/types/index.ts o src/types/sucursal.ts
+export interface Sucursal {
+  idSucursal: number;
+  nombre: string;
+  direccion: string;
+  telefono: string;
+  email: string;
+  fechaCreacion: string;
+}
+  

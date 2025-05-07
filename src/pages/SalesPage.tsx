@@ -10,9 +10,11 @@ import { Plus, Search, Filter, ShoppingCart } from 'lucide-react';
 import { useSalesStore } from '../store/salesStore';
 import { useProductStore } from '../store/productStore';
 import { useAuthStore } from '../store/authStore';
+import { useCustomerStore } from '../store/customerStore';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { Sale, SaleItem, Product } from '../types';
 import { toast } from 'react-hot-toast';
+import { customersService } from '../services/api/customer.service';
 
 export const SalesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,7 +26,11 @@ export const SalesPage: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState<number>(1);
   const [customerName, setCustomerName] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<Sale['paymentMethod']>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<Sale['paymentMethod']>('Efectivo');
+  const { customers, fetchCustomers, addCustomer } = useCustomerStore();
+  const [clienteId, setClienteId] = useState<number | null>(null);
+  const [isAddClientModalOpen, setAddClientModalOpen] = useState(false);
+  const [customerCI, setCustomerCI] = useState('');
   
   const { 
     sales, 
@@ -38,14 +44,44 @@ export const SalesPage: React.FC = () => {
     completeSale,
     cancelCurrentSale
   } = useSalesStore();
+  const [form, setForm] = useState({
+    nombre: '',
+    apellido: '',
+    email: '',
+    telefono: '',
+    direccion: ''
+  });
   
   const { products, fetchProducts } = useProductStore();
   const { user } = useAuthStore();
+
+
+  const handleSearchCustomer = async () => {
+  try {
+    const found = await customersService.getCustomerByCI(customerCI.trim());
+    if (found) {
+      setClienteId(found.idCliente);
+      setCustomerName(`${found.nombre} ${found.apellido}`);
+      toast.success(`Cliente encontrado: ${found.nombre} ${found.apellido}`);
+    } else {
+      toast.error('Cliente no encontrado, puedes registrarlo');
+      setClienteId(null);
+      setCustomerName('');
+      setAddClientModalOpen(true);
+    }
+  } catch (err) {
+    toast.error('Error al buscar cliente');
+  }
+};
   
   useEffect(() => {
     fetchSales();
     fetchProducts();
   }, [fetchSales, fetchProducts]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
   
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -439,23 +475,26 @@ export const SalesPage: React.FC = () => {
         <ModalBody>
           <div className="space-y-4">
             <Input
-              label="Customer Name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              required
+              label="Buscar cliente por CI"
+              value={customerCI}
+              onChange={(e) => setCustomerCI(e.target.value)}
+              placeholder="Ingresa CI del cliente"
             />
+            <Button onClick={handleSearchCustomer}>Buscar</Button>
             
             <Select
-              label="Payment Method"
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as Sale['paymentMethod'])}
+              label="Select Customer"
+              value={clienteId?.toString() || ''}
+              onChange={(e) => setClienteId(parseInt(e.target.value))}
               options={[
-                { value: 'cash', label: 'Cash' },
-                { value: 'card', label: 'Card' },
-                { value: 'insurance', label: 'Insurance' },
+                { value: '', label: 'Select a customer' },
+                ...customers.map(c => ({
+                  value: c.idCliente.toString(),
+                  label: `${c.nombre} ${c.apellido} - ${c.email}`
+                }))
               ]}
-              required
             />
+            <Button variant="outline" onClick={() => setAddClientModalOpen(true)}>Add New Customer</Button>
             
             {currentSale && (
               <div className="bg-gray-50 p-4 rounded-md mt-4">
@@ -487,6 +526,40 @@ export const SalesPage: React.FC = () => {
           </Button>
           <Button onClick={handleCompleteSale}>
             Complete Sale
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+
+      <Modal
+        isOpen={isAddClientModalOpen}
+        onClose={() => setAddClientModalOpen(false)}
+        title="Add New Customer"
+      >
+        <ModalBody>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input label="CI" value={form.ci} onChange={(e) => setForm({ ...form, ci: e.target.value })} /> 
+            <Input label="First Name" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+            <Input label="Last Name" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
+            <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input label="Phone" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+            <Input label="Address" value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setAddClientModalOpen(false)}>Cancel</Button>
+          <Button onClick={async () => {
+            try {
+              const newClient = await addCustomer(form);
+              toast.success('Customer added');
+              await fetchCustomers();
+              setClienteId(newClient.idCliente); // seleccionar automáticamente
+              setAddClientModalOpen(false);
+            } catch {
+              toast.error('Error adding customer');
+            }
+          }}>
+            Save
           </Button>
         </ModalFooter>
       </Modal>

@@ -43,6 +43,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile, closeMobileMenu }) =
       href: '/dashboard',
     },
     {
+      name: 'Sucursal',
+      icon: <Package size={20} />,
+      href: '/sucursal',
+    },
+    {
       name: 'Inventory',
       icon: <Package size={20} />,
       href: '/inventory',
