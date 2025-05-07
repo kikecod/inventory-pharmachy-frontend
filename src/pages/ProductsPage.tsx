@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
 import { Modal, ModalBody, ModalFooter } from '../components/ui/Modal';
-import { Search, Filter, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2} from 'lucide-react';
 import { useProductStore } from '../store/productStore';
 import { Product } from '../types';
-import { formatCurrency } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 
 export const ProductsPage: React.FC = () => {
@@ -16,108 +14,126 @@ export const ProductsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
-  
-  const { products, categories, isLoading, error, fetchProducts, fetchCategories, addProduct, updateProduct, deleteProduct } = useProductStore();
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 10;
+
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const { products, isLoading, error, fetchProducts, addProduct, updateProduct, deleteProduct } = useProductStore();
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        await Promise.all([fetchProducts(), fetchCategories()]);
+        const fetchedProducts = await fetchProducts();
+        setFilteredProducts(fetchedProducts);
       } catch (err) {
-        toast.error('Failed to load products');
+        toast.error('Error al cargar los productos');
       }
     };
     loadData();
-  }, [fetchProducts, fetchCategories]);
-  
+  }, [fetchProducts]);
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredProducts(products);
       return;
     }
-    
+
     const lowercasedQuery = searchQuery.toLowerCase();
-    const filtered = products.filter((product) => 
-      product.name.toLowerCase().includes(lowercasedQuery) ||
-      product.sku.toLowerCase().includes(lowercasedQuery) ||
-      product.category.toLowerCase().includes(lowercasedQuery) ||
-      product.manufacturer.toLowerCase().includes(lowercasedQuery)
+    const filtered = products.filter((product) =>
+      product.nombre.toLowerCase().includes(lowercasedQuery) ||
+      product.descripcion.toLowerCase().includes(lowercasedQuery)
     );
-    
+
     setFilteredProducts(filtered);
   }, [searchQuery, products]);
-  
+
   const handleAddProduct = () => {
     setIsEditing(false);
     setCurrentProduct({
-      name: '',
-      description: '',
-      category: '',
-      sku: '',
-      price: 0,
-      costPrice: 0,
-      stockQuantity: 0,
-      expiryDate: '',
-      manufacturer: '',
-      requiresPrescription: false,
+      nombre: '',
+      descripcion: '',
+      stock: 0,
+      idUnidad: 0,
+      idProveedor: 0,
+      idCategoria: 0,
     });
     setIsModalOpen(true);
   };
-  
+
   const handleEditProduct = (product: Product) => {
     setIsEditing(true);
-    setCurrentProduct({
-      ...product,
-      expiryDate: new Date(product.expiryDate).toISOString().split('T')[0],
-    });
+    setCurrentProduct(product);
     setIsModalOpen(true);
   };
-  
-  const handleDeleteProduct = async (id: string) => {
+
+  const handleDeleteProduct = async (idProducto: number) => {
     if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       try {
-        await deleteProduct(id);
+        await deleteProduct(idProducto);
         toast.success('Product deleted successfully');
+  
+        // Actualizar el estado global y local
+        setFilteredProducts((prevProducts) =>
+          prevProducts.filter((product) => product.idProducto !== idProducto)
+        );
+  
+        // Actualizar el estado global de `products` en el store
+        const updatedProducts = products.filter((product) => product.idProducto !== idProducto);
+        useProductStore.setState({ products: updatedProducts });
       } catch (error) {
+        console.error('Error al eliminar el producto:', error);
         toast.error('Failed to delete product');
       }
     }
   };
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
-    
+
     setCurrentProduct((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' 
-        ? (e.target as HTMLInputElement).checked 
-        : type === 'number' 
-          ? parseFloat(value) 
-          : value,
+      [name]: type === 'number' ? parseFloat(value) : value,
     }));
   };
-  
+
   const handleSubmit = async () => {
     try {
-      if (!currentProduct.name || !currentProduct.sku || !currentProduct.category) {
+      if (!currentProduct.nombre || !currentProduct.descripcion) {
         toast.error('Please fill in all required fields');
         return;
       }
-      
-      if (isEditing && currentProduct.id) {
-        await updateProduct(currentProduct.id, currentProduct);
+
+      if (isEditing && currentProduct.idProducto) {
+        await updateProduct(currentProduct.idProducto, currentProduct);
         toast.success('Product updated successfully');
       } else {
-        await addProduct(currentProduct as Omit<Product, 'id'>);
+        await addProduct(currentProduct as Omit<Product, 'idProducto'>);
         toast.success('Product added successfully');
       }
-      
+
       setIsModalOpen(false);
     } catch (error) {
       toast.error('An error occurred. Please try again.');
     }
   };
-  
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
@@ -126,7 +142,7 @@ export const ProductsPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (isLoading) {
     return (
       <div className="flex flex-col space-y-4">
@@ -135,7 +151,7 @@ export const ProductsPage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="pb-5 border-b border-gray-200">
@@ -143,10 +159,10 @@ export const ProductsPage: React.FC = () => {
           Product Management
         </h3>
         <p className="mt-2 max-w-4xl text-sm text-gray-500">
-          Manage your pharmacy's products, pricing, and categories
+          Manage your pharmacy's products, stock, and categories
         </p>
       </div>
-      
+
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="relative w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -160,61 +176,36 @@ export const ProductsPage: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" leftIcon={<Filter size={16} />}>
-            Filter
-          </Button>
-          
-          <Button leftIcon={<Plus size={16} />} onClick={handleAddProduct}>
-            Add Product
-          </Button>
-        </div>
+        <Button leftIcon={<Plus size={16} />} onClick={handleAddProduct}>
+          Add Product
+        </Button>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead>Stock</TableHead>
-              <TableHead>Prescription</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.length === 0 ? (
+            {currentProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                   No products found.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.sku}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{product.category}</Badge>
-                  </TableCell>
-                  <TableCell>{formatCurrency(product.price)}</TableCell>
-                  <TableCell>
-                    {product.stockQuantity <= 10 ? (
-                      <Badge variant="warning">{product.stockQuantity} left</Badge>
-                    ) : (
-                      product.stockQuantity
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {product.requiresPrescription ? (
-                      <Badge variant="primary">Required</Badge>
-                    ) : (
-                      <Badge variant="outline">Not Required</Badge>
-                    )}
-                  </TableCell>
+              currentProducts.map((product) => (
+                <TableRow key={product.idProducto}>
+                  <TableCell>{product.idProducto}</TableCell>
+                  <TableCell>{product.nombre}</TableCell>
+                  <TableCell>{product.descripcion}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
@@ -230,7 +221,7 @@ export const ProductsPage: React.FC = () => {
                         size="sm"
                         leftIcon={<Trash2 size={16} />}
                         className="text-error-600 hover:bg-error-50"
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => handleDeleteProduct(product.idProducto)}
                       >
                         Delete
                       </Button>
@@ -240,9 +231,28 @@ export const ProductsPage: React.FC = () => {
               ))
             )}
           </TableBody>
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              variant="outline"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </Table>
       </div>
-      
+
       {/* Add/Edit Product Modal */}
       <Modal
         isOpen={isModalOpen}
@@ -254,95 +264,50 @@ export const ProductsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Product Name"
-              name="name"
-              value={currentProduct.name || ''}
+              name="nombre"
+              value={currentProduct.nombre || ''}
               onChange={handleInputChange}
               required
             />
-            
             <Input
-              label="SKU"
-              name="sku"
-              value={currentProduct.sku || ''}
+              label="Description"
+              name="descripcion"
+              value={currentProduct.descripcion || ''}
               onChange={handleInputChange}
               required
             />
-            
             <Input
-              label="Category"
-              name="category"
-              value={currentProduct.category || ''}
-              onChange={handleInputChange}
-              required
-            />
-            
-            <Input
-              label="Manufacturer"
-              name="manufacturer"
-              value={currentProduct.manufacturer || ''}
-              onChange={handleInputChange}
-              required
-            />
-            
-            <Input
-              label="Price ($)"
+              label="Stock"
               type="number"
-              name="price"
-              value={currentProduct.price?.toString() || '0'}
+              name="stock"
+              value={currentProduct.stock?.toString() || '0'}
               onChange={handleInputChange}
               required
             />
-            
             <Input
-              label="Cost Price ($)"
+              label="Unit ID"
               type="number"
-              name="costPrice"
-              value={currentProduct.costPrice?.toString() || '0'}
+              name="idUnidad"
+              value={currentProduct.idUnidad?.toString() || '0'}
               onChange={handleInputChange}
               required
             />
-            
             <Input
-              label="Stock Quantity"
+              label="Provider ID"
               type="number"
-              name="stockQuantity"
-              value={currentProduct.stockQuantity?.toString() || '0'}
+              name="idProveedor"
+              value={currentProduct.idProveedor?.toString() || '0'}
               onChange={handleInputChange}
               required
             />
-            
             <Input
-              label="Expiry Date"
-              type="date"
-              name="expiryDate"
-              value={currentProduct.expiryDate || ''}
+              label="Category ID"
+              type="number"
+              name="idCategoria"
+              value={currentProduct.idCategoria?.toString() || '0'}
               onChange={handleInputChange}
               required
             />
-            
-            <div className="col-span-2">
-              <Input
-                label="Description"
-                name="description"
-                value={currentProduct.description || ''}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="requiresPrescription"
-                name="requiresPrescription"
-                checked={currentProduct.requiresPrescription || false}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="requiresPrescription" className="text-sm text-gray-700">
-                Requires Prescription
-              </label>
-            </div>
           </div>
         </ModalBody>
         <ModalFooter>

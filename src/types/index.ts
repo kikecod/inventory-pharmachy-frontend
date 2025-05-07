@@ -7,18 +7,13 @@ export type User = {
 };
 
 export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  sku: string;
-  price: number;
-  costPrice: number;
-  stockQuantity: number;
-  expiryDate: string;
-  manufacturer: string;
-  requiresPrescription: boolean;
-  imageUrl?: string;
+    idProducto: number;
+    nombre: string;
+    descripcion: string;
+    stock: number;
+    idUnidad: number;
+    idProveedor: number;
+    idCategoria: number;
 };
 
 export type Category = {

@@ -7,11 +7,11 @@ interface ProductState {
   categories: Category[];
   isLoading: boolean;
   error: string | null;
-  fetchProducts: () => Promise<void>;
+  fetchProducts: () => Promise<Product[]>;
   fetchCategories: () => Promise<void>;
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
-  updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'idProducto'>) => Promise<void>;
+  updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: number) => Promise<void>;
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
 }
 
@@ -29,34 +29,34 @@ export const useProductStore = create<ProductState>((set) => ({
   categories: [],
   isLoading: false,
   error: null,
-  
-  fetchProducts: async () => {
+
+  fetchProducts: async (): Promise<Product[]> => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const products = await productsService.getProducts();
       set({ products, isLoading: false });
+      return products;
     } catch (error) {
       set({ error: 'Failed to fetch products', isLoading: false });
       throw error;
     }
   },
-  
+
   fetchCategories: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
-      // Using mock categories for now
       set({ categories: mockCategories, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch categories', isLoading: false });
       throw error;
     }
   },
-  
-  addProduct: async (product) => {
+
+  addProduct: async (product: Omit<Product, 'idProducto'>) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const newProduct = await productsService.createProduct(product);
       set((state) => ({
@@ -68,15 +68,15 @@ export const useProductStore = create<ProductState>((set) => ({
       throw error;
     }
   },
-  
-  updateProduct: async (id, updates) => {
+
+  updateProduct: async (id: number, updates: Partial<Product>) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const updatedProduct = await productsService.updateProduct(id, updates);
       set((state) => ({
-        products: state.products.map((product) => 
-          product.id === id ? updatedProduct : product
+        products: state.products.map((product) =>
+          product.idProducto === id ? updatedProduct : product
         ),
         isLoading: false,
       }));
@@ -85,14 +85,14 @@ export const useProductStore = create<ProductState>((set) => ({
       throw error;
     }
   },
-  
-  deleteProduct: async (id) => {
+
+  deleteProduct: async (id: number) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       await productsService.deleteProduct(id);
       set((state) => ({
-        products: state.products.filter((product) => product.id !== id),
+        products: state.products.filter((product) => product.idProducto !== id),
         isLoading: false,
       }));
     } catch (error) {
@@ -100,16 +100,16 @@ export const useProductStore = create<ProductState>((set) => ({
       throw error;
     }
   },
-  
+
   addCategory: async (category) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const newCategory: Category = {
         ...category,
         id: Date.now().toString(),
       };
-      
+
       set((state) => ({
         categories: [...state.categories, newCategory],
         isLoading: false,
