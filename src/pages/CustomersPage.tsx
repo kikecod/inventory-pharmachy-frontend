@@ -1,6 +1,13 @@
 // File: src/pages/CustomersPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell
+} from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalBody, ModalFooter } from '../components/ui/Modal';
@@ -39,8 +46,9 @@ export const CustomersPage: React.FC = () => {
       const q = searchQuery.toLowerCase();
       setFilteredCustomers(
         customers.filter(c =>
+          c.ci.toLowerCase().includes(q) ||
           c.nombre.toLowerCase().includes(q) ||
-          c.apellido.toLowerCase().includes(q) 
+          c.apellido.toLowerCase().includes(q)
         )
       );
     }
@@ -64,7 +72,7 @@ export const CustomersPage: React.FC = () => {
       await deleteCustomer(id);
       toast.success('Cliente eliminado');
     } catch {
-      toast.error('Error al eliminar');
+      toast.error('Error al eliminar cliente');
     }
   };
 
@@ -84,7 +92,7 @@ export const CustomersPage: React.FC = () => {
       }
       setIsModalOpen(false);
     } catch {
-      toast.error('Error al guardar');
+      toast.error('Error al guardar cliente');
     }
   };
 
@@ -95,17 +103,19 @@ export const CustomersPage: React.FC = () => {
   );
 
   if (error) return <div className="text-red-600">Error: {error}</div>;
-  if (isLoading) return <div>Cargando clientes...</div>;
+  if (isLoading) return <div>Cargando clientes…</div>;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="pb-5 border-b">
-        <h3 className="text-lg font-medium">Customer Management</h3>
-        <Button leftIcon={<Plus />} onClick={openAddModal} className="mt-2">
+    <div className="space-y-6 animate-fade-in p-4">
+      {/* Cabecera */}
+      <div className="pb-5 border-b border-gray-200 flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-900">Gestión de Clientes</h3>
+        <Button leftIcon={<Plus />} onClick={openAddModal}>
           Nuevo Cliente
         </Button>
       </div>
 
+      {/* Buscador */}
       <div className="pb-4">
         <Input
           placeholder="Buscar por CI, nombre o apellido"
@@ -114,6 +124,7 @@ export const CustomersPage: React.FC = () => {
         />
       </div>
 
+      {/* Tabla */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableHeader>
@@ -138,10 +149,19 @@ export const CustomersPage: React.FC = () => {
                 <TableCell>{c.direccion}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openEditModal(c)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditModal(c)}
+                    >
                       <Edit size={16} />
                     </Button>
-                    <Button size="sm" variant="outline" className="text-error-600" onClick={() => handleDelete(c.idCliente!)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-error-600"
+                      onClick={() => handleDelete(c.idCliente!)}
+                    >
                       <Trash2 size={16} />
                     </Button>
                   </div>
@@ -159,7 +179,9 @@ export const CustomersPage: React.FC = () => {
             >
               Anterior
             </Button>
-            <span>Página {currentPage} de {totalPages}</span>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
             <Button
               variant="outline"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
@@ -171,20 +193,75 @@ export const CustomersPage: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}>
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
+      >
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="CI" name="ci" value={currentCustomer.ci || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, ci: e.target.value }))} />
-            <Input label="Nombre" name="nombre" value={currentCustomer.nombre || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, nombre: e.target.value }))} />
-            <Input label="Apellido" name="apellido" value={currentCustomer.apellido || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, apellido: e.target.value }))} />
-            <Input label="Email" name="email" type="email" value={currentCustomer.email || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, email: e.target.value }))} />
-            <Input label="Teléfono" name="telefono" value={currentCustomer.telefono || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, telefono: e.target.value }))} />
-            <Input label="Dirección" name="direccion" value={currentCustomer.direccion || ''} onChange={e => setCurrentCustomer(prev => ({ ...prev, direccion: e.target.value }))} />
+            <Input
+              label="CI"
+              name="ci"
+              value={currentCustomer.ci || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, ci: e.target.value }))
+              }
+              required
+            />
+            <Input
+              label="Nombre"
+              name="nombre"
+              value={currentCustomer.nombre || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, nombre: e.target.value }))
+              }
+              required
+            />
+            <Input
+              label="Apellido"
+              name="apellido"
+              value={currentCustomer.apellido || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, apellido: e.target.value }))
+              }
+              required
+            />
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={currentCustomer.email || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, email: e.target.value }))
+              }
+            />
+            <Input
+              label="Teléfono"
+              name="telefono"
+              value={currentCustomer.telefono || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, telefono: e.target.value }))
+              }
+            />
+            <Input
+              label="Dirección"
+              name="direccion"
+              value={currentCustomer.direccion || ''}
+              onChange={e =>
+                setCurrentCustomer(prev => ({ ...prev, direccion: e.target.value }))
+              }
+            />
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>{isEditing ? 'Actualizar' : 'Agregar'}</Button>
+          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit}>
+            {isEditing ? 'Actualizar' : 'Agregar'}
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

@@ -1,3 +1,4 @@
+// File: src/pages/DashboardPage.tsx
 import React, { useEffect } from 'react';
 import { StatsGrid } from '../components/dashboard/StatsGrid';
 import { SalesChart } from '../components/dashboard/SalesChart';
@@ -11,35 +12,43 @@ export const DashboardPage: React.FC = () => {
   const { stats, isLoading, error, fetchDashboard } = useDashboardStore();
 
   useEffect(() => {
-    // primero cargar ventas para RecentSales
-    fetchSales().then(() => {
-      // luego cargar los demás KPIs
-      fetchDashboard();
-    });
+    // Primero cargamos las ventas (para RecentSales) y luego los KPIs
+    fetchSales().then(fetchDashboard);
   }, [fetchSales, fetchDashboard]);
 
-  // mientras carga mostramos el skeleton
   if (isLoading) {
-    return <div>Cargando datos del dashboard…</div>;
+    return <div>Cargando datos del panel…</div>;
   }
   if (error) {
     return <div className="text-red-600">Error: {error}</div>;
   }
 
-  // una vez cargado, llenamos recentSales a mano:
-  const recent = sales.slice(0, 5);
+  // Tomamos las 5 ventas más recientes
+  const recientes = sales.slice(0, 5);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* header… */}
-      <StatsGrid stats={{ ...stats, recentSales: recent }} isLoading={isLoading} />
+      {/* Encabezado */}
+      <div className="pb-5 border-b border-gray-200">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">
+          Visión General
+        </h3>
+        <p className="mt-2 max-w-4xl text-sm text-gray-500">
+          Monitorea los indicadores clave de tu farmacia
+        </p>
+      </div>
 
+      {/* Estadísticas rápidas */}
+      <StatsGrid stats={{ ...stats, recentSales: recientes }} isLoading={isLoading} />
+
+      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SalesChart data={recent} isLoading={isLoading} />
+        <SalesChart data={recientes} isLoading={isLoading} />
         <CategorySalesChart data={stats.salesByCategory} isLoading={isLoading} />
       </div>
 
-      <RecentSales sales={recent} isLoading={isLoading} />
+      {/* Ventas recientes */}
+      <RecentSales sales={recientes} isLoading={isLoading} />
     </div>
   );
 };

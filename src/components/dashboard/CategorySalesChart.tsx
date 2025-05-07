@@ -42,8 +42,8 @@ export const CategorySalesChart: React.FC<CategorySalesChartProps> = ({ isLoadin
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Sales by Category</CardTitle>
-          <CardDescription>Product category distribution</CardDescription>
+          <CardTitle>Ventas por Categoria</CardTitle>
+          <CardDescription>Categoria de producto de distribucion</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64 bg-gray-100 animate-pulse rounded" />
@@ -55,8 +55,8 @@ export const CategorySalesChart: React.FC<CategorySalesChartProps> = ({ isLoadin
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Stock by Category</CardTitle>
-        <CardDescription>Product stock distribution</CardDescription>
+        <CardTitle>Ventas por Categoria</CardTitle>
+        <CardDescription>Categoria de producto de distribucion</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-64">
