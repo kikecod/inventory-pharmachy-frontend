@@ -64,6 +64,12 @@ export const ProductsPage: React.FC = () => {
     setFilteredProducts(filtered);
   }, [searchQuery, products]);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredProducts(products);
+    }
+  }, [products, searchQuery]);
+
   const handleAddProduct = () => {
     setIsEditing(false);
     setCurrentProduct({
@@ -88,15 +94,8 @@ export const ProductsPage: React.FC = () => {
       try {
         await deleteProduct(idProducto);
         toast.success('Product deleted successfully');
-  
-        // Actualizar el estado global y local
-        setFilteredProducts((prevProducts) =>
-          prevProducts.filter((product) => product.idProducto !== idProducto)
-        );
-  
-        // Actualizar el estado global de `products` en el store
-        const updatedProducts = products.filter((product) => product.idProducto !== idProducto);
-        useProductStore.setState({ products: updatedProducts });
+
+        setFilteredProducts((prev) => prev.filter((product) => product.idProducto !== idProducto));
       } catch (error) {
         console.error('Error al eliminar el producto:', error);
         toast.error('Failed to delete product');

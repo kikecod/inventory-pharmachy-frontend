@@ -88,9 +88,11 @@ export const useProductStore = create<ProductState>((set) => ({
 
   deleteProduct: async (id: number) => {
     set({ isLoading: true, error: null });
-
+  
     try {
       await productsService.deleteProduct(id);
+  
+      // Actualizar el estado global eliminando el producto directamente
       set((state) => ({
         products: state.products.filter((product) => product.idProducto !== id),
         isLoading: false,
