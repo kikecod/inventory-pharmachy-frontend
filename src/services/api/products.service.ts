@@ -16,6 +16,7 @@ export const productsService = {
       idUnidad: item.idUnidad,
       idProveedor: item.idProveedor,
       idCategoria: item.idCategoria,
+      precio: item.precio, // ✅ agrega esto
     }));
   },
 
@@ -33,6 +34,7 @@ export const productsService = {
       idUnidad: item.idUnidad,
       idProveedor: item.idProveedor,
       idCategoria: item.idCategoria,
+      precio: item.precio, // ✅ aquí también
     }));
   },
 
@@ -50,6 +52,7 @@ export const productsService = {
       idUnidad: item.idUnidad,
       idProveedor: item.idProveedor,
       idCategoria: item.idCategoria,
+      precio: item.precio, // ✅ aquí también
     };
   },
 

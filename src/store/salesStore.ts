@@ -15,7 +15,7 @@ interface SalesState {
   addItemToSale: (item: SaleItem) => void;
   removeItemFromSale: (productId: string) => void;
   updateItemQuantity: (productId: string, quantity: number) => void;
-  completeSale: (customerName: string, paymentMethod: Sale['paymentMethod']) => Promise<void>;
+  completeSale: (clienteId: number, customerName: string, paymentMethod: Sale['paymentMethod']) => Promise<void>;
   cancelCurrentSale: () => void;
 }
 
@@ -277,27 +277,44 @@ export const useSalesStore = create<SalesState>((set, get) => ({
     });
   },
   
-  completeSale: async (customerName, paymentMethod) => {
+  completeSale: async (clienteId, customerName, paymentMethod) => {
     const { currentSale } = get();
-    
+  
     if (!currentSale) {
       set({ error: 'No active sale to complete' });
       return;
     }
-    
+  
     if (currentSale.items.length === 0) {
       set({ error: 'Cannot complete a sale with no items' });
       return;
     }
-    
-    const completedSale: Omit<Sale, 'id'> = {
-      ...currentSale,
-      customerName,
-      paymentMethod,
-      status: 'completed',
-    };
-    
-    await get().createSale(completedSale);
+  
+    const tipoVenta = paymentMethod === 'Efectivo' ? 'CONTADO' : 'CREDITO';
+  
+    try {
+      await salesService.createSaleWithDetails({
+        idCliente: clienteId,
+        idUsuario: parseInt(currentSale.staffId),
+        tipoVenta,
+        total: currentSale.total,
+        detalle: currentSale.items.map(item => ({
+          idProducto: parseInt(item.productId),
+          cantidad: item.quantity,
+          subtotal: item.subtotal,
+        })),
+      });
+  
+      // Limpiar estado
+      set((state) => ({
+        currentSale: null,
+        sales: [...state.sales], // podrías hacer refetch si es necesario
+      }));
+  
+    } catch (error) {
+      console.error('Failed to complete sale:', error);
+      set({ error: 'Error al registrar la venta' });
+    }
   },
   
   cancelCurrentSale: () => {

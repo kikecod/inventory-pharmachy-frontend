@@ -20,6 +20,8 @@ export const SalesPage: React.FC = () => {
   const [isNewSaleModalOpen, setIsNewSaleModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [productSearch, setProductSearch] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState<number>(1);
   const [customerName, setCustomerName] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<Sale['paymentMethod']>('cash');
@@ -60,6 +62,21 @@ export const SalesPage: React.FC = () => {
     
     setFilteredSales(filtered);
   }, [searchQuery, sales]);
+
+  useEffect(() => {
+    if (productSearch.trim() === '') {
+      setFilteredProducts(products);
+    } else {
+      const query = productSearch.toLowerCase();
+      setFilteredProducts(
+        products.filter((product) =>
+          product.nombre.toLowerCase().includes(query) ||
+          product.descripcion?.toLowerCase().includes(query)
+        )
+      );
+    }
+  }, [productSearch, products]);
+
   
   const handleStartNewSale = () => {
     if (user) {
@@ -75,31 +92,38 @@ export const SalesPage: React.FC = () => {
       toast.error('Please select a product and set a valid quantity');
       return;
     }
-    
-    const product = products.find((p) => p.id === selectedProduct);
-    
+  
+    const product = products.find(
+      (p) => p.idProducto.toString() === selectedProduct
+    );
+  
     if (!product) {
       toast.error('Selected product not found');
       return;
     }
-    
-    if (product.stockQuantity < quantity) {
-      toast.error(`Only ${product.stockQuantity} units available in stock`);
+  
+    if (product.stock < quantity) {
+      toast.error(`Only ${product.stock} units available in stock`);
       return;
     }
-    
+  
+    const unitPrice = product.precio;
+  
     const saleItem: SaleItem = {
-      productId: product.id,
-      productName: product.name,
+      productId: product.idProducto.toString(),
+      productName: product.nombre,
       quantity,
-      unitPrice: product.price,
-      subtotal: product.price * quantity,
+      unitPrice,
+      subtotal: unitPrice * quantity,
     };
-    
+    console.log('Producto seleccionado:', product);
+    console.log('Precio del producto:', product.precio);
+  
     addItemToSale(saleItem);
     setSelectedProduct('');
+    setProductSearch('');
     setQuantity(1);
-    toast.success(`${product.name} added to sale`);
+    toast.success(`${product.nombre} added to sale`);
   };
   
   const handleRemoveItem = (productId: string) => {
@@ -135,10 +159,10 @@ export const SalesPage: React.FC = () => {
     }
     
     try {
-      await completeSale(customerName, paymentMethod);
+      await completeSale(clienteId, customerName, paymentMethod);
       setIsCheckoutModalOpen(false);
       setCustomerName('');
-      setPaymentMethod('cash');
+      setPaymentMethod('Efectivo');
       toast.success('Sale completed successfully');
     } catch (error) {
       toast.error('Failed to complete sale');
@@ -156,10 +180,10 @@ export const SalesPage: React.FC = () => {
   
   const renderPaymentMethod = (method: Sale['paymentMethod']) => {
     switch (method) {
-      case 'cash':
-        return <Badge variant="success">Cash</Badge>;
-      case 'card':
-        return <Badge variant="primary">Card</Badge>;
+      case 'Efectivo':
+        return <Badge variant="success">Efectivo</Badge>;
+      case 'Tarjeta':
+        return <Badge variant="primary">Tarjeta</Badge>;
       case 'insurance':
         return <Badge variant="secondary">Insurance</Badge>;
       default:
@@ -273,19 +297,31 @@ export const SalesPage: React.FC = () => {
         <ModalBody>
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4">
-              <Select
-                label="Product"
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                options={[
-                  { value: '', label: 'Select a product' },
-                  ...products.map((product) => ({
-                    value: product.id,
-                    label: `${product.name} - ${formatCurrency(product.price)} (${product.stockQuantity} in stock)`,
-                  })),
-                ]}
-                className="flex-1"
-              />
+            <div className="flex-1 relative">
+                <Input
+                  label="Search Product"
+                  placeholder="Type to search..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                />
+                {filteredProducts.length > 0 && (
+                  <ul className="absolute z-10 bg-white border border-gray-300 rounded mt-1 max-h-60 overflow-auto w-full">
+                    {filteredProducts.map((product) => (
+                      <li
+                        key={product.idProducto}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => {
+                          setSelectedProduct(product.idProducto.toString());
+                          setProductSearch(`${product.nombre} (${product.stock} in stock)`);
+                          setFilteredProducts([]); // ocultar lista
+                        }}
+                      >
+                        {product.nombre} - {product.descripcion} ({product.stock} disponibles)
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               
               <Input
                 label="Quantity"

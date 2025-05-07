@@ -7,13 +7,14 @@ export type User = {
 };
 
 export type Product = {
-    idProducto: number;
-    nombre: string;
-    descripcion: string;
-    stock: number;
-    idUnidad: number;
-    idProveedor: number;
-    idCategoria: number;
+  idProducto: number;
+  nombre: string;
+  descripcion: string;
+  stock: number;
+  precio: number; // ✅ importante
+  idUnidad?: number;
+  idProveedor?: number;
+  idCategoria?: number;
 };
 
 export type Category = {
@@ -63,4 +64,13 @@ export type DashboardStats = {
     amount: number;
   }[];
   inventoryValue: number;
+};
+
+export type Customer = {
+  idCliente: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  direccion: string;
 };

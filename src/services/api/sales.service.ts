@@ -56,4 +56,23 @@ export const salesService = {
     });
     return response.blob();
   },
+  async createSaleWithDetails(saleData: {
+    idCliente: number;
+    idUsuario: number;
+    tipoVenta: 'CONTADO' | 'CREDITO';
+    total: number;
+    detalle: {
+      idProducto: number;
+      cantidad: number;
+      subtotal: number;
+    }[];
+  }): Promise<any> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/ventas`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(saleData),
+    });
+    return handleResponse(response);
+  }
 };
