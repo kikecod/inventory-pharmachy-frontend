@@ -21,13 +21,12 @@ export function formatCurrency(amount: number): string {
 /**
  * Formats a date to a readable string
  */
-export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+export function formatDate(dateString?: string): string {
+  if (!dateString) {
+    return '';
+  }
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
 }
 
 /**

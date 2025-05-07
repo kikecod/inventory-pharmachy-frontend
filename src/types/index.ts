@@ -142,3 +142,26 @@ export type DashboardStats = {
   salesByCategory: { category: string; amount: number }[];
 };
   
+export interface InventoryLote {
+  idLote: number;
+  idProducto: number;
+  nombreProducto: string;
+  categoria: string;
+  unidad: string;
+  proveedor: string;
+  codigoLote: string;
+  fechaVencimiento: string;
+  cantidad: number;
+  fechaIngreso: string;
+  precioUnitario: number;
+  sucursal: string;
+  notas?: string;
+}
+
+export interface StockBySucursal {
+  idProducto: number;
+  nombre: string;
+  stock: number;
+  unidad: string;
+  categoria: string;
+}

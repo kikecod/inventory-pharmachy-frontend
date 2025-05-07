@@ -1,47 +1,47 @@
 import { API_URL, getHeaders, handleResponse } from './config';
-import { InventoryItem } from '../../types';
+import { InventoryLote, StockBySucursal } from '../../types/index';
 
 export const inventoryService = {
-  async getInventory(): Promise<InventoryItem[]> {
+  async getLotes(): Promise<InventoryLote[]> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/inventory`, {
+    const response = await fetch(`${API_URL}/api/inventario/lotes`, {
       headers: getHeaders(token),
     });
     return handleResponse(response);
   },
 
-  async getInventoryItem(id: string): Promise<InventoryItem> {
+  async createLote(data: Omit<InventoryLote, 'idLote'>): Promise<{ idLote: number }> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/inventory/${id}`, {
-      headers: getHeaders(token),
-    });
-    return handleResponse(response);
-  },
-
-  async createInventoryItem(item: Omit<InventoryItem, 'id'>): Promise<InventoryItem> {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/inventory`, {
+    const response = await fetch(`${API_URL}/api/inventario/lotes`, {
       method: 'POST',
       headers: getHeaders(token),
-      body: JSON.stringify(item),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  async updateInventoryItem(id: string, item: Partial<InventoryItem>): Promise<InventoryItem> {
+  async updateLote(idLote: number, data: Omit<InventoryLote, 'idLote'>): Promise<{ message: string }> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/inventory/${id}`, {
+    const response = await fetch(`${API_URL}/api/inventario/lotes/${idLote}`, {
       method: 'PUT',
       headers: getHeaders(token),
-      body: JSON.stringify(item),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  async deleteInventoryItem(id: string): Promise<void> {
+  async deleteLote(idLote: number): Promise<{ message: string }> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/inventory/${id}`, {
+    const response = await fetch(`${API_URL}/api/inventario/lotes/${idLote}`, {
       method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    return handleResponse(response);
+  },
+
+  async getStockBySucursal(sucursalId: number): Promise<StockBySucursal[]> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/inventario/stock?sucursal=${sucursalId}`, {
       headers: getHeaders(token),
     });
     return handleResponse(response);

@@ -1,70 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, AlertTriangle, Plus } from 'lucide-react';
+import { Search, Filter, AlertTriangle } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { formatDate } from '../../lib/utils';
-import { InventoryItem, Product } from '../../types';
-import { useProductStore } from '../../store/productStore';
+import { InventoryLote } from '../../types';
 
 interface InventoryTableProps {
-  inventory: InventoryItem[];
+  inventory: InventoryLote[];
   isLoading: boolean;
-  onAddItem: () => void;
-  onEditItem: (item: InventoryItem) => void;
+  onEditItem: (item: InventoryLote) => void;
+  onDeleteItem: (item: InventoryLote) => void;
 }
 
 export const InventoryTable: React.FC<InventoryTableProps> = ({
   inventory,
   isLoading,
-  onAddItem,
   onEditItem,
+  onDeleteItem,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
-  const { products, fetchProducts } = useProductStore();
-  
+  const [filteredItems, setFilteredItems] = useState<InventoryLote[]>([]);
+
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-  
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
+    // al cambiar inventario o búsqueda, filtra
+    if (!searchQuery.trim()) {
       setFilteredItems(inventory);
-      return;
-    }
-    
-    const lowercasedQuery = searchQuery.toLowerCase();
-    const filtered = inventory.filter((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      return (
-        product?.name.toLowerCase().includes(lowercasedQuery) ||
-        item.batchNumber.toLowerCase().includes(lowercasedQuery) ||
-        item.supplierName.toLowerCase().includes(lowercasedQuery)
+    } else {
+      const q = searchQuery.toLowerCase();
+      setFilteredItems(
+        inventory.filter(item =>
+          item.nombreProducto.toLowerCase().includes(q) ||
+          item.codigoLote.toLowerCase().includes(q) ||
+          item.proveedor.toLowerCase().includes(q)
+        )
       );
-    });
-    
-    setFilteredItems(filtered);
-  }, [searchQuery, inventory, products]);
-  
-  const getProductName = (productId: string): string => {
-    const product = products.find((p) => p.id === productId);
-    return product?.name || 'Unknown Product';
+    }
+  }, [searchQuery, inventory]);
+
+  const isLowStock = (cantidad: number) => cantidad <= 30;
+  const isExpiringSoon = (fecha: string) => {
+    const hoy = new Date();
+    const venc = new Date(fecha);
+    const diff = (venc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
+    return diff <= 90;
   };
-  
-  const isLowStock = (quantity: number): boolean => {
-    return quantity <= 30;
-  };
-  
-  const isExpiringSoon = (expiryDate: string): boolean => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 90;
-  };
-  
+
   if (isLoading) {
     return (
       <div className="flex flex-col space-y-4">
@@ -73,9 +55,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-4">
+      {/* Búsqueda y filtro */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="relative w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -83,90 +66,93 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
           </div>
           <Input
             type="text"
-            placeholder="Search inventory..."
+            placeholder="Buscar en inventario..."
             className="pl-10"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" leftIcon={<Filter size={16} />}>
-            Filter
-          </Button>
-          
-          <Button leftIcon={<Plus size={16} />} onClick={onAddItem}>
-            Add Item
-          </Button>
-        </div>
+        <Button variant="outline" leftIcon={<Filter size={16} />}>
+          Filtrar
+        </Button>
       </div>
-      
+
+      {/* Tabla de lotes */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Batch</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Expiry Date</TableHead>
-              <TableHead>Supplier</TableHead>
-              <TableHead>Received</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>Producto</TableHead>
+              <TableHead>Lote</TableHead>
+              <TableHead>Cantidad</TableHead>
+              <TableHead>Vencimiento</TableHead>
+              <TableHead>Proveedor</TableHead>
+              <TableHead>Ingreso</TableHead>
+              <TableHead>Precio Unit.</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  No inventory items found.
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  No se encontraron lotes.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{getProductName(item.productId)}</TableCell>
-                  <TableCell>{item.batchNumber}</TableCell>
+              filteredItems.map(item => (
+                <TableRow key={item.idLote}>
+                  <TableCell className="font-medium">{item.nombreProducto}</TableCell>
+                  <TableCell>{item.codigoLote}</TableCell>
                   <TableCell>
-                    {isLowStock(item.quantity) ? (
+                    {isLowStock(item.cantidad) ? (
                       <div className="flex items-center">
-                        <span>{item.quantity}</span>
+                        <span>{item.cantidad}</span>
                         <AlertTriangle size={16} className="ml-2 text-warning-500" />
                       </div>
                     ) : (
-                      item.quantity
+                      item.cantidad
                     )}
                   </TableCell>
                   <TableCell>
-                    {isExpiringSoon(item.expiryDate) ? (
-                      <div className="flex items-center">
-                        <span>{formatDate(item.expiryDate)}</span>
-                        <AlertTriangle size={16} className="ml-2 text-error-500" />
-                      </div>
-                    ) : (
-                      formatDate(item.expiryDate)
+                    {item.fechaVencimiento
+                      ? (
+                        isExpiringSoon(item.fechaVencimiento) ? (
+                          <div className="flex items-center">
+                            <span>{formatDate(item.fechaVencimiento)}</span>
+                            <AlertTriangle size={16} className="ml-2 text-error-500" />
+                          </div>
+                        ) : (
+                          formatDate(item.fechaVencimiento)
+                        )
+                      )
+                      : '–'
+                    }
+                  </TableCell>
+                  <TableCell>{item.proveedor}</TableCell>
+                  <TableCell>{item.fechaIngreso ? formatDate(item.fechaIngreso) : '–'}</TableCell>
+                  <TableCell>{item.precioUnitario.toFixed(2)} Bs</TableCell>
+                  <TableCell>
+                    {isLowStock(item.cantidad) && <Badge variant="warning">Poco stock</Badge>}
+                    {isExpiringSoon(item.fechaVencimiento) && (
+                      <Badge variant="error" className="ml-1">Por vencer</Badge>
+                    )}
+                    {!isLowStock(item.cantidad) && !isExpiringSoon(item.fechaVencimiento) && (
+                      <Badge variant="success">Ok</Badge>
                     )}
                   </TableCell>
-                  <TableCell>{item.supplierName}</TableCell>
-                  <TableCell>{formatDate(item.receivedDate)}</TableCell>
-                  <TableCell>
-                    {isLowStock(item.quantity) && (
-                      <Badge variant="warning">Low Stock</Badge>
-                    )}
-                    {isExpiringSoon(item.expiryDate) && (
-                      <Badge variant="error" className="ml-1">Expiring Soon</Badge>
-                    )}
-                    {!isLowStock(item.quantity) && !isExpiringSoon(item.expiryDate) && (
-                      <Badge variant="success">Good</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
+                  <TableCell className="space-x-2">
+                    <Button size="sm" variant="outline" onClick={() => onEditItem(item)}>
+                      Editar
+                    </Button>
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => onEditItem(item)}
+                      variant="outline"
+                      className="text-error-600 hover:bg-error-50"
+                      onClick={() => onDeleteItem(item)}
                     >
-                      Edit
+                      Eliminar
                     </Button>
                   </TableCell>
                 </TableRow>

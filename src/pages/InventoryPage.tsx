@@ -6,173 +6,194 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useProductStore } from '../store/productStore';
-import { InventoryItem } from '../types';
+import { InventoryLote } from '../types';
 import { toast } from 'react-hot-toast';
 
 export const InventoryPage: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentItem, setCurrentItem] = useState<Partial<InventoryItem>>({});
-  
-  const { inventory, isLoading, fetchInventory, addInventoryItem, updateInventoryItem } = useInventoryStore();
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [estaEditando, setEstaEditando] = useState(false);
+  const [itemActual, setItemActual] = useState<Partial<InventoryLote>>({});
+
+  const {
+    lotes,
+    isLoading,
+    error,
+    fetchInventory,
+    addInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+  } = useInventoryStore();
   const { products, fetchProducts } = useProductStore();
-  
+
   useEffect(() => {
     fetchInventory();
     fetchProducts();
   }, [fetchInventory, fetchProducts]);
-  
-  const handleAddItem = () => {
-    setIsEditing(false);
-    setCurrentItem({
-      productId: '',
-      batchNumber: '',
-      quantity: 0,
-      expiryDate: '',
-      receivedDate: new Date().toISOString().split('T')[0],
-      supplierName: '',
+
+  const handleAgregar = () => {
+    setEstaEditando(false);
+    setItemActual({
+      idProducto: undefined,
+      codigoLote: '',
+      fechaVencimiento: '',
+      cantidad: 0,
+      fechaIngreso: new Date().toISOString().split('T')[0],
+      precioUnitario: 0,
+      notas: '',
     });
-    setIsModalOpen(true);
+    setModalAbierto(true);
   };
-  
-  const handleEditItem = (item: InventoryItem) => {
-    setIsEditing(true);
-    setCurrentItem({
-      ...item,
-      expiryDate: new Date(item.expiryDate).toISOString().split('T')[0],
-      receivedDate: new Date(item.receivedDate).toISOString().split('T')[0],
-    });
-    setIsModalOpen(true);
+
+  const handleEditar = (lote: InventoryLote) => {
+    setEstaEditando(true);
+    setItemActual({ ...lote });
+    setModalAbierto(true);
   };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setCurrentItem((prev) => ({
-      ...prev,
-      [name]: name === 'quantity' ? parseInt(value) : value,
-    }));
-  };
-  
-  const handleSubmit = async () => {
+
+  const handleEliminar = async (lote: InventoryLote) => {
+    if (!confirm(`¿Eliminar el lote "${lote.codigoLote}"?`)) return;
     try {
-      if (!currentItem.productId || !currentItem.batchNumber || !currentItem.expiryDate) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-      
-      if (isEditing && currentItem.id) {
-        await updateInventoryItem(currentItem.id, currentItem as InventoryItem);
-        toast.success('Inventory item updated successfully');
-      } else {
-        await addInventoryItem(currentItem as Omit<InventoryItem, 'id'>);
-        toast.success('Inventory item added successfully');
-      }
-      
-      setIsModalOpen(false);
-    } catch (error) {
-      toast.error('An error occurred. Please try again.');
+      await deleteInventoryItem(lote.idLote);
+      toast.success('Lote eliminado correctamente');
+    } catch {
+      toast.error('Error al eliminar el lote');
     }
   };
-  
+
+  const handleCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setItemActual(prev => ({
+      ...prev,
+      [name]:
+        name === 'cantidad' || name === 'precioUnitario'
+          ? parseFloat(value)
+          : value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    // Validar obligatorios
+    const campos = ['idProducto','codigoLote','fechaVencimiento','cantidad','precioUnitario'] as const;
+    for (const c of campos) {
+      if (!itemActual[c]) {
+        toast.error('Completa todos los campos obligatorios');
+        return;
+      }
+    }
+    try {
+      if (estaEditando) {
+        await updateInventoryItem(itemActual.idLote!, itemActual as InventoryLote);
+        toast.success('Lote actualizado correctamente');
+      } else {
+        await addInventoryItem(itemActual as Omit<InventoryLote,'idLote'>);
+        toast.success('Lote registrado exitosamente');
+      }
+      setModalAbierto(false);
+    } catch {
+      toast.error('Ocurrió un error. Intenta de nuevo');
+    }
+  };
+
+  if (error) {
+    return <div className="p-4 text-red-600">Error: {error}</div>;
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 p-4 animate-fade-in">
       <div className="pb-5 border-b border-gray-200">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Inventory Management
-        </h3>
-        <p className="mt-2 max-w-4xl text-sm text-gray-500">
-          Manage your pharmacy's inventory, track stock levels, and monitor expiry dates
+        <h3 className="text-lg font-medium">Gestión de Inventario</h3>
+        <p className="mt-1 text-sm text-gray-600">
+          Administra lotes, niveles de stock y fechas de vencimiento
         </p>
       </div>
-      
-      <InventoryTable 
-        inventory={inventory} 
-        isLoading={isLoading} 
-        onAddItem={handleAddItem}
-        onEditItem={handleEditItem}
+
+      <div className="flex justify-end">
+        <Button onClick={handleAgregar}>+ Nuevo lote</Button>
+      </div>
+
+      <InventoryTable
+        inventory={lotes}
+        isLoading={isLoading}
+        onEditItem={handleEditar}
+        onDeleteItem={handleEliminar}
       />
-      
-      {/* Add/Edit Inventory Item Modal */}
+
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={isEditing ? 'Edit Inventory Item' : 'Add Inventory Item'}
+        isOpen={modalAbierto}
+        onClose={() => setModalAbierto(false)}
+        title={estaEditando ? 'Editar lote' : 'Registrar lote'}
         maxWidth="lg"
       >
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
-              label="Product"
-              name="productId"
-              value={currentItem.productId || ''}
-              onChange={handleInputChange}
+              label="Producto"
+              name="idProducto"
+              value={itemActual.idProducto?.toString() || ''}
+              onChange={handleCambio}
               options={[
-                { value: '', label: 'Select a product' },
-                ...products.map((product) => ({
-                  value: product.id,
-                  label: product.name,
+                { value: '', label: 'Selecciona un producto' },
+                ...products.map(p => ({
+                  value: p.idProducto.toString(),
+                  label: p.nombre,
                 })),
               ]}
               required
             />
-            
             <Input
-              label="Batch Number"
-              name="batchNumber"
-              value={currentItem.batchNumber || ''}
-              onChange={handleInputChange}
+              label="Código de lote"
+              name="codigoLote"
+              value={itemActual.codigoLote || ''}
+              onChange={handleCambio}
               required
             />
-            
             <Input
-              label="Quantity"
+              label="Cantidad"
               type="number"
-              name="quantity"
-              value={currentItem.quantity?.toString() || '0'}
-              onChange={handleInputChange}
+              name="cantidad"
+              value={itemActual.cantidad?.toString() || '0'}
+              onChange={handleCambio}
               required
             />
-            
             <Input
-              label="Supplier Name"
-              name="supplierName"
-              value={currentItem.supplierName || ''}
-              onChange={handleInputChange}
+              label="Precio unitario"
+              type="number"
+              step="0.01"
+              name="precioUnitario"
+              value={itemActual.precioUnitario?.toString() || '0'}
+              onChange={handleCambio}
               required
             />
-            
             <Input
-              label="Expiry Date"
+              label="Fecha de vencimiento"
               type="date"
-              name="expiryDate"
-              value={currentItem.expiryDate || ''}
-              onChange={handleInputChange}
+              name="fechaVencimiento"
+              value={itemActual.fechaVencimiento || ''}
+              onChange={handleCambio}
               required
             />
-            
             <Input
-              label="Received Date"
+              label="Fecha de ingreso"
               type="date"
-              name="receivedDate"
-              value={currentItem.receivedDate || ''}
-              onChange={handleInputChange}
+              name="fechaIngreso"
+              value={itemActual.fechaIngreso || ''}
+              onChange={handleCambio}
               required
             />
-            
             <Input
-              label="Notes (Optional)"
-              name="notes"
-              value={currentItem.notes || ''}
-              onChange={handleInputChange}
+              label="Notas (opcional)"
+              name="notas"
+              value={itemActual.notas || ''}
+              onChange={handleCambio}
             />
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-            Cancel
+          <Button variant="outline" onClick={() => setModalAbierto(false)}>
+            Cancelar
           </Button>
           <Button onClick={handleSubmit}>
-            {isEditing ? 'Update' : 'Add'} Item
+            {estaEditando ? 'Actualizar' : 'Registrar'}
           </Button>
         </ModalFooter>
       </Modal>
