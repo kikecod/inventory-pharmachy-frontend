@@ -17,9 +17,9 @@ export type Product = {
 };
 
 export type Category = {
-  id: string;
-  name: string;
-  description: string;
+  idCategoria: number;
+  nombre: string;
+  descripcion: string;
 };
 
 export type InventoryItem = {

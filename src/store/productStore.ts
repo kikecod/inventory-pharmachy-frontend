@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Product, Category } from '../types';
 import { productsService } from '../services/api/products.service';
+import { categoriesService } from '../services/api/categories.service';
 
 interface ProductState {
   products: Product[];
@@ -15,14 +16,6 @@ interface ProductState {
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
 }
 
-// Mock categories for demonstration
-const mockCategories: Category[] = [
-  { id: '1', name: 'Analgesics', description: 'Pain relievers and fever reducers' },
-  { id: '2', name: 'Antibiotics', description: 'Medications that kill or inhibit the growth of bacteria' },
-  { id: '3', name: 'Supplements', description: 'Vitamins and dietary supplements' },
-  { id: '4', name: 'Allergy', description: 'Medications for allergy relief' },
-  { id: '5', name: 'Cardiovascular', description: 'Medications for heart and blood vessel conditions' },
-];
 
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
@@ -45,9 +38,10 @@ export const useProductStore = create<ProductState>((set) => ({
 
   fetchCategories: async () => {
     set({ isLoading: true, error: null });
-
+  
     try {
-      set({ categories: mockCategories, isLoading: false });
+      const categories = await categoriesService.getCategories(); // Llamada al servicio del backend
+      set({ categories, isLoading: false }); // Asignar las categorías obtenidas al estado
     } catch (error) {
       set({ error: 'Failed to fetch categories', isLoading: false });
       throw error;
@@ -103,15 +97,15 @@ export const useProductStore = create<ProductState>((set) => ({
     }
   },
 
-  addCategory: async (category) => {
+  addCategory: async (category: Omit<Category, 'idCategoria'>) => {
     set({ isLoading: true, error: null });
-
+  
     try {
       const newCategory: Category = {
         ...category,
-        id: Date.now().toString(),
+        idCategoria: Date.now(), // Generar un idCategoria único
       };
-
+  
       set((state) => ({
         categories: [...state.categories, newCategory],
         isLoading: false,
@@ -120,5 +114,5 @@ export const useProductStore = create<ProductState>((set) => ({
       set({ error: 'Failed to add category', isLoading: false });
       throw error;
     }
-  },
+  }
 }));

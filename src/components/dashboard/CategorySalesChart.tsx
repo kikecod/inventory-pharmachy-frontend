@@ -1,15 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
-// Mock data for the chart
-const data = [
-  { name: 'Analgesics', value: 8500 },
-  { name: 'Antibiotics', value: 6200 },
-  { name: 'Supplements', value: 4800 },
-  { name: 'Cardiovascular', value: 7300 },
-  { name: 'Gastrointestinal', value: 5100 },
-];
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from 'recharts';
+import { categoriesService } from '../../services/api/categories.service';
 
 const COLORS = ['#0d9488', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
 
@@ -18,7 +10,35 @@ interface CategorySalesChartProps {
 }
 
 export const CategorySalesChart: React.FC<CategorySalesChartProps> = ({ isLoading }) => {
-  if (isLoading) {
+  const [data, setData] = useState<{ name: string; value: number }[]>([]);
+  const [loading, setLoading] = useState(isLoading);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Obtener datos de ventas directamente del endpoint
+        const sales = await categoriesService.getCategorySales();
+
+        // Convertir el JSON en un array compatible con recharts
+        const chartData = Object.entries(sales).map(([name, value]) => ({
+          name,
+          value: Number(value),
+        }));
+
+        setData(chartData);
+      } catch (error) {
+        console.error('Error fetching category sales data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
     return (
       <Card>
         <CardHeader>
@@ -31,33 +51,22 @@ export const CategorySalesChart: React.FC<CategorySalesChartProps> = ({ isLoadin
       </Card>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sales by Category</CardTitle>
-        <CardDescription>Product category distribution</CardDescription>
+        <CardTitle>Stock by Category</CardTitle>
+        <CardDescription>Product stock distribution</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                innerRadius={40}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={false} />
+              <YAxis />
               <Tooltip
-                formatter={(value) => [`$${value}`, 'Sales']}
+                formatter={(value) => [`${value}`, 'Stock']}
                 contentStyle={{
                   backgroundColor: 'white',
                   border: '1px solid #e2e8f0',
@@ -65,8 +74,8 @@ export const CategorySalesChart: React.FC<CategorySalesChartProps> = ({ isLoadin
                   boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                 }}
               />
-              <Legend />
-            </PieChart>
+              <Bar dataKey="value" fill={COLORS[1]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
