@@ -76,13 +76,19 @@ export type Customer = {
   direccion: string;
 };
 
-// src/types/index.ts o src/types/sucursal.ts
-export interface Sucursal {
+interface Sucursal {
   idSucursal: number;
   nombre: string;
   direccion: string;
   telefono: string;
   email: string;
   fechaCreacion: string;
+}
+
+interface SucursalState {
+  sucursales: Sucursal[];
+  currentSucursal: Sucursal | null;
+  fetchSucursales: () => Promise<void>;
+  setCurrentSucursal: (sucursal: Sucursal) => void;
 }
   

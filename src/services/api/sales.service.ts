@@ -51,7 +51,7 @@ export const salesService = {
 
   async generateInvoice(idVenta: number): Promise<Blob> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/facturas/${idVenta}}/pdf/`, {
+    const response = await fetch(`${API_URL}/api/facturas/${idVenta}/pdf`, {
       headers: getHeaders(token),
     });
     return response.blob();

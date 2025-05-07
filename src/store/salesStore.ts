@@ -221,7 +221,7 @@ export const useSalesStore = create<SalesState>((set, get) => ({
     const tipoVenta = paymentMethod === 'Efectivo' ? 'CONTADO' : 'CREDITO';
   
     try {
-      await salesService.createSaleWithDetails({
+      const response = await salesService.createSaleWithDetails({
         idCliente: clienteId,
         idUsuario: parseInt(currentSale.staffId),
         tipoVenta,
@@ -231,14 +231,22 @@ export const useSalesStore = create<SalesState>((set, get) => ({
           cantidad: item.quantity,
           subtotal: item.subtotal,
         }))
-      }).then(async (data) => {
-        const idVenta = data.idVenta;
+      });
       
-        // 🔽 Lógica para obtener y abrir PDF
+      const idVenta = parseInt(response.idVenta);
+      console.log('ID de venta recibido:', response.idVenta);
+      
+      // ⏳ guarda temporalmente el ID para permitir luego una acción explícita del usuario
+      setTimeout(async () => {
         const blob = await salesService.generateInvoice(idVenta);
         const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      });
+        
+        // ✅ FORZA interacción directa con botón
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+      }, 0);
   
       // Limpiar estado
       set((state) => ({

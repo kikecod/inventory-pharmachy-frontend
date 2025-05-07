@@ -15,6 +15,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import { Sale, SaleItem, Product } from '../types';
 import { toast } from 'react-hot-toast';
 import { customersService } from '../services/api/customer.service';
+import { salesService } from '../services/api/sales.service';
 
 export const SalesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -527,6 +528,7 @@ export const SalesPage: React.FC = () => {
           <Button onClick={handleCompleteSale}>
             Complete Sale
           </Button>
+        
         </ModalFooter>
       </Modal>
 

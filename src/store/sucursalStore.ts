@@ -4,17 +4,17 @@ import { sucursalService } from '../services/api/sucursal.service';
 
 interface SucursalState {
   sucursales: Sucursal[];
-  selectedSucursal: Sucursal | null;
+  currentSucursal: Sucursal | null;
   isLoading: boolean;
   error: string | null;
   fetchSucursales: () => Promise<void>;
   addSucursal: (s: Omit<Sucursal, 'idSucursal' | 'fechaCreacion'>) => Promise<void>;
-  selectSucursal: (id: number) => void;
+  setCurrentSucursal: (sucursal: Sucursal) => void;
 }
 
 export const useSucursalStore = create<SucursalState>((set, get) => ({
   sucursales: [],
-  selectedSucursal: null,
+  currentSucursal: null,
   isLoading: false,
   error: null,
 
@@ -23,10 +23,10 @@ export const useSucursalStore = create<SucursalState>((set, get) => ({
     try {
       const data = await sucursalService.getAll();
       set({ sucursales: data });
-      const stored = localStorage.getItem('selectedSucursalId');
+      const stored = localStorage.getItem('idSucursal');
       if (stored) {
         const found = data.find(s => s.idSucursal === Number(stored));
-        if (found) set({ selectedSucursal: found });
+        if (found) set({ currentSucursal: found });
       }
     } catch (e) {
       set({ error: 'Error al cargar sucursales' });
@@ -47,11 +47,8 @@ export const useSucursalStore = create<SucursalState>((set, get) => ({
     }
   },
 
-  selectSucursal: (id) => {
-    const found = get().sucursales.find(s => s.idSucursal === id);
-    if (found) {
-      localStorage.setItem('selectedSucursalId', id.toString());
-      set({ selectedSucursal: found });
-    }
-  },
+  setCurrentSucursal: (sucursal) => {
+    localStorage.setItem('idSucursal', sucursal.idSucursal.toString());
+    set({ currentSucursal: sucursal });
+  }
 }));
