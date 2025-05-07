@@ -2,22 +2,36 @@ import { API_URL, getHeaders, handleResponse } from './config';
 import { Product } from '../../types';
 
 export const productsService = {
-  async getProducts(): Promise<Product[]> {
+  async getProductsBySucursal(): Promise<Product[]> {
     const token = localStorage.getItem('token') ?? undefined;
-    const response = await fetch(`${API_URL}/api/productos`, {
-      headers: getHeaders(token),
+    const sucursalId = localStorage.getItem('idSucursal');
+  
+    if (!sucursalId) {
+      throw new Error('Sucursal no seleccionada');
+    }
+    console.log('TOKEN:', token);
+    console.log('SUCURSAL ID:', sucursalId);
+    const response = await fetch(`${API_URL}/api/productos/sucursal`, {
+      headers: {
+        ...getHeaders(token),
+        'Sucursal-ID': sucursalId, // ✅ el header correcto
+      },
     });
+    console.log('RESPONSE STATUS:', response.status);
+  
     const data = await handleResponse(response);
+  
     return data.map((item: any) => ({
       idProducto: item.idProducto,
       nombre: item.nombre,
       descripcion: item.descripcion,
       stock: item.stock,
-      idUnidad: item.idUnidad,
-      idProveedor: item.idProveedor,
-      idCategoria: item.idCategoria,
-      precio: item.precio, // ✅ agrega esto
+      precio: item.precio,
+      unidad: item.unidad,
+      proveedor: item.proveedor,
+      categoria: item.categoria,
     }));
+    
   },
 
   async searchProducts(query: string): Promise<Product[]> {

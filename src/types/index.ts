@@ -53,18 +53,7 @@ export type Sale = {
   staffId: string;
 };
 
-export type DashboardStats = {
-  totalSales: number;
-  totalRevenue: number;
-  lowStockCount: number;
-  expiringProductsCount: number;
-  recentSales: Sale[];
-  salesByCategory: {
-    category: string;
-    amount: number;
-  }[];
-  inventoryValue: number;
-};
+
 
 export type Customer = {
   idCliente: number;
@@ -91,4 +80,65 @@ interface SucursalState {
   fetchSucursales: () => Promise<void>;
   setCurrentSucursal: (sucursal: Sucursal) => void;
 }
+// Datos básicos de un proveedor
+export interface Provider {
+  idProveedor: number;
+  nombre: string;
+  telefono?: string;
+  email?: string;
+  direccion?: string;
+}
+
+// Productos asociados a un proveedor
+export interface ProviderProduct {
+  idProducto: number;
+  nombre: string;
+  descripcion: string;
+  stock: number;
+  idUnidad: number;
+  idProveedor: number;
+  idCategoria: number;
+}
+
+// Ítem del pedido que envías al proveedor
+export interface OrderItem {
+  idProducto: number;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+// DTO para crear un pedido
+export interface CreateOrderDTO {
+  idProveedor: number;
+  idUsuario: number;
+  total: number;
+  detalle: OrderItem[];
+}
+
+// Respuesta al crear pedido
+export interface CreateOrderResponse {
+  idPedido: number;
+}
+
+// Registro en el historial de compras
+export interface PurchaseRecord {
+  idPedido: number;
+  proveedor: string;
+  usuario: string;
+  fecha: string;
+  total: number;
+  estado: string;
+  detalle: OrderItem[];
+}
+
+export type DashboardStats = {
+  totalSales: number;
+  totalRevenue: number;
+  lowStockCount: number;
+  expiringProductsCount: number;
+  inventoryValue: number;
+  recentSales: Sale[];                           // ya lo tienes
+  salesByCategory: { category: string; amount: number }[];
+};
   

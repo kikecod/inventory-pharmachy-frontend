@@ -16,24 +16,34 @@ export const ProductsPage: React.FC = () => {
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
+  
 
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
-  const { products, isLoading, error, fetchProducts, addProduct, updateProduct, deleteProduct } = useProductStore();
+  const {
+    products,
+    isLoading,
+    error,
+    fetchProductsBySucursal,
+    addProduct,
+    updateProduct,
+    deleteProduct
+  } = useProductStore();
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadProducts = async () => {
       try {
-        const fetchedProducts = await fetchProducts();
-        setFilteredProducts(fetchedProducts);
+        const fetched = await fetchProductsBySucursal();
+        setFilteredProducts(fetched);
       } catch (err) {
-        toast.error('Error al cargar los productos');
+        toast.error('Error al cargar productos por sucursal');
       }
     };
-    loadData();
-  }, [fetchProducts]);
+  
+    loadProducts();
+  }, [fetchProductsBySucursal]);
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
@@ -137,7 +147,7 @@ export const ProductsPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <p className="text-error-600 text-lg mb-4">Failed to load products</p>
-        <Button onClick={() => fetchProducts()}>Retry</Button>
+        <Button onClick={() => fetchProductsBySucursal()}>Retry</Button>
       </div>
     );
   }
@@ -184,11 +194,13 @@ export const ProductsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Descripción</TableHead>
               <TableHead>Stock</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>Unidad</TableHead>
+              <TableHead>Proveedor</TableHead>
+              <TableHead>Categoría</TableHead>
+              <TableHead>Precio</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -201,10 +213,13 @@ export const ProductsPage: React.FC = () => {
             ) : (
               currentProducts.map((product) => (
                 <TableRow key={product.idProducto}>
-                  <TableCell>{product.idProducto}</TableCell>
                   <TableCell>{product.nombre}</TableCell>
                   <TableCell>{product.descripcion}</TableCell>
                   <TableCell>{product.stock}</TableCell>
+                  <TableCell>{product.unidad}</TableCell>
+                  <TableCell>{product.proveedor}</TableCell>
+                  <TableCell>{product.categoria}</TableCell>
+                  <TableCell>{product.precio.toFixed(2)} Bs</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button

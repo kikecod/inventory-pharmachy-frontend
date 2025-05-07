@@ -11,9 +11,11 @@ interface ProductState {
   fetchProducts: () => Promise<Product[]>;
   fetchCategories: () => Promise<void>;
   addProduct: (product: Omit<Product, 'idProducto'>) => Promise<void>;
+  fetchProductsBySucursal: () => Promise<void>;
   updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+
 }
 
 
@@ -32,6 +34,18 @@ export const useProductStore = create<ProductState>((set) => ({
       return products;
     } catch (error) {
       set({ error: 'Failed to fetch products', isLoading: false });
+      throw error;
+    }
+  },
+  fetchProductsBySucursal: async (): Promise<Product[]> => {
+    set({ isLoading: true, error: null });
+  
+    try {
+      const products = await productsService.getProductsBySucursal();
+      set({ products, isLoading: false });
+      return products;
+    } catch (error) {
+      set({ error: 'Error al cargar productos por sucursal', isLoading: false });
       throw error;
     }
   },
