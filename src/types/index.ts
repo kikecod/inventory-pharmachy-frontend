@@ -33,24 +33,23 @@ export type InventoryItem = {
   notes?: string;
 };
 
-export type Sale = {
-  id: string;
-  customerId?: string;
-  customerName: string;
-  items: SaleItem[];
-  total: number;
-  paymentMethod: 'cash' | 'card' | 'insurance';
-  status: 'completed' | 'pending' | 'cancelled';
-  createdAt: string;
-  staffId: string;
-};
-
 export type SaleItem = {
   productId: string;
   productName: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;
+};
+
+export type Sale = {
+  id: string;
+  customerName: string;
+  createdAt: string;
+  items: SaleItem[];
+  total: number;
+  paymentMethod: 'Efectivo' | 'Tarjeta' | 'insurance';
+  status: 'completed' | 'pending' | 'cancelled';
+  staffId: string;
 };
 
 export type DashboardStats = {

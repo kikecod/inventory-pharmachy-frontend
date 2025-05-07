@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Sale, SaleItem } from '../types';
+import { salesService } from '../services/api/sales.service';
 
 interface SalesState {
   sales: Sale[];
@@ -108,12 +109,12 @@ export const useSalesStore = create<SalesState>((set, get) => ({
   
   fetchSales: async () => {
     set({ isLoading: true, error: null });
-    
+  
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      set({ sales: mockSales });
+      const sales = await salesService.getSales();
+      set({ sales });
     } catch (error) {
+      console.error('Error fetching sales:', error);
       set({ error: 'Failed to fetch sales' });
     } finally {
       set({ isLoading: false });
