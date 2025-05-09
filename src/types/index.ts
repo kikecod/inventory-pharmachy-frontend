@@ -170,3 +170,41 @@ export interface Unidad {
   descripcion: string;
   unipcaja: number;
 }
+// src/types/usuario.ts
+
+export interface Usuario {
+  idUsuario: number;
+  nombre: string;
+  apellido: string | null;
+  email: string;
+  idRol: string;           // nombre del rol
+  fechaCreacion: string;   // ISO date string
+}
+
+export interface CreateUsuarioDTO {
+  nombre: string;
+  apellido?: string;
+  email: string;
+  password: string;
+  idRol: string;
+}
+
+export interface UpdateUsuarioDTO {
+  nombre: string;
+  apellido?: string;
+  email: string;
+  idRol: string;
+}
+
+export interface ChangePasswordAdminDTO {
+  nuevaPassword: string;
+}
+
+export interface ChangePasswordSelfDTO {
+  passwordActual: string;
+  nuevaPassword: string;
+}
+
+export interface ChangeRoleDTO {
+  rol: string;
+}

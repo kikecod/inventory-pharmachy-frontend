@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import * as lucide from 'lucide-react';
 
 import { Button } from '../ui/Button';
@@ -19,7 +19,7 @@ export const RegisterForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const { register, isLoading } = useAuthStore();
-  const navigate = useNavigate();
+
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +32,7 @@ export const RegisterForm: React.FC = () => {
     
     try {
       await register(nombre, apellido, email, password, rol);
-      navigate('/dashboard');
+      
     } catch (err) {
       setError('Registration failed. Please try again.');
     }
@@ -138,17 +138,7 @@ export const RegisterForm: React.FC = () => {
             </Button>
           </form>
           
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <a 
-                onClick={() => navigate('/login')}
-                className="font-medium text-primary-600 hover:text-primary-500 cursor-pointer"
-              >
-                Sign in
-              </a>
-            </p>
-          </div>
+          
         </CardContent>
       </Card>
     </div>

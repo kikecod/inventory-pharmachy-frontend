@@ -40,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile, closeMobileMenu }) =
     { name: 'Productos',     icon: <ShoppingCart size={20} />,   href: '/products' },
     { name: 'Ventas',        icon: <BarChart3 size={20} />,      href: '/sales' },
     { name: 'Clientes',      icon: <Users size={20} />,          href: '/customers' },
+    { name: 'Usuarios',      icon: <Users size={20} />,          href: '/usuarios' },
   ];
 
   const secondaryNavItems = [

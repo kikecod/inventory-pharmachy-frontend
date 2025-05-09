@@ -19,6 +19,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SucursalPage } from './pages/SucursalPage';
 import { ProveedorPage } from './pages/ProveedorPage';
+import { UsuariosPage } from './pages/UsuariosPage';
 
 // Auth store
 import { useAuthStore } from './store/authStore';
@@ -79,6 +80,7 @@ function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="sales" element={<SalesPage />} />
           <Route path="customers" element={<CustomersPage />} />
+          <Route path="usuarios" element={<UsuariosPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
