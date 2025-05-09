@@ -23,7 +23,7 @@ export const CustomersPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<Partial<Customer>>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const itemsPerPage = 10;
 
   const {
     customers,

@@ -53,7 +53,7 @@ export const ProveedorPage: React.FC = () => {
   const [isOrderModalOpen, setOrderModalOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderForm, setOrderForm] = useState<CreateOrderDTO>({
-    idProveedor: 0, idUsuario: parseInt(user?.id||'0'), total: 0, detalle: []
+    idProveedor: 0, idUsuario: parseInt(user?.id || '0'), total: 0, detalle: []
   });
   const [selectedProdId, setSelectedProdId] = useState<number>(0);
   const [orderQty, setOrderQty] = useState(1);
@@ -71,7 +71,7 @@ export const ProveedorPage: React.FC = () => {
     setFiltered(
       providers.filter(p =>
         p.nombre.toLowerCase().includes(q) ||
-        (p.email||'').toLowerCase().includes(q)
+        (p.email || '').toLowerCase().includes(q)
       )
     );
   }, [searchQ, providers]);
@@ -97,7 +97,7 @@ export const ProveedorPage: React.FC = () => {
         await updateProvider(provForm.idProveedor, provForm as Provider);
         toast.success('Proveedor actualizado');
       } else {
-        await addProvider(provForm as Omit<Provider,'idProveedor'>);
+        await addProvider(provForm as Omit<Provider, 'idProveedor'>);
         toast.success('Proveedor agregado');
       }
       setProvModalOpen(false);
@@ -156,6 +156,16 @@ export const ProveedorPage: React.FC = () => {
     }
   };
 
+  // Paginación
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedProviders = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6 p-4">
       <div className="flex justify-between items-center border-b pb-3">
@@ -194,22 +204,45 @@ export const ProveedorPage: React.FC = () => {
               <TableCell>{p.telefono}</TableCell>
               <TableCell className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => openEditProv(p)}>
-                  <Edit size={14}/>
+                  <Edit size={14} />
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => removeProv(p.idProveedor)} className="text-red-600">
-                  <Trash2 size={14}/>
+                  <Trash2 size={14} />
                 </Button>
                 <Button size="sm" onClick={() => viewProducts(p.idProveedor)}>
-                  <Box size={14}/> Productos
+                  <Box size={14} /> Productos
                 </Button>
                 <Button size="sm" onClick={() => openOrderModal(p.idProveedor)}>
-                  <Plus size={14}/> Pedido
+                  <Plus size={14} /> Pedido
                 </Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center px-4 py-2 border-t text-sm space-x-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-gray-700">
+            Página {currentPage} de {totalPages}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      )}
 
       {/* Add/Edit Provider Modal */}
       <Modal
@@ -221,35 +254,35 @@ export const ProveedorPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nombre"
-              value={provForm.nombre||''}
-              onChange={e => setProvForm(f=>({ ...f, nombre: e.target.value }))}
+              value={provForm.nombre || ''}
+              onChange={e => setProvForm(f => ({ ...f, nombre: e.target.value }))}
             />
             <Input
               label="Email"
               type="email"
-              value={provForm.email||''}
-              onChange={e => setProvForm(f=>({ ...f, email: e.target.value }))}
+              value={provForm.email || ''}
+              onChange={e => setProvForm(f => ({ ...f, email: e.target.value }))}
             />
             <Input
               label="Teléfono"
-              value={provForm.telefono||''}
-              onChange={e => setProvForm(f=>({ ...f, telefono: e.target.value }))}
+              value={provForm.telefono || ''}
+              onChange={e => setProvForm(f => ({ ...f, telefono: e.target.value }))}
             />
             <Input
               label="Dirección"
-              value={provForm.direccion||''}
-              onChange={e => setProvForm(f=>({ ...f, direccion: e.target.value }))}
+              value={provForm.direccion || ''}
+              onChange={e => setProvForm(f => ({ ...f, direccion: e.target.value }))}
             />
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={()=>setProvModalOpen(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setProvModalOpen(false)}>Cancelar</Button>
           <Button onClick={saveProv}>{isEditingProv ? 'Actualizar' : 'Crear'}</Button>
         </ModalFooter>
       </Modal>
 
       {/* Products Modal */}
-      <Modal isOpen={isProdModalOpen} onClose={()=>setProdModalOpen(false)} title="Productos del Proveedor">
+      <Modal isOpen={isProdModalOpen} onClose={() => setProdModalOpen(false)} title="Productos del Proveedor">
         <ModalBody>
           <Table>
             <TableHeader>
@@ -273,7 +306,7 @@ export const ProveedorPage: React.FC = () => {
       </Modal>
 
       {/* Purchase History Modal */}
-      <Modal isOpen={isHistModalOpen} onClose={()=>setHistModalOpen(false)} title="Historial de Compras">
+      <Modal isOpen={isHistModalOpen} onClose={() => setHistModalOpen(false)} title="Historial de Compras">
         <ModalBody>
           <Table>
             <TableHeader>
@@ -299,17 +332,17 @@ export const ProveedorPage: React.FC = () => {
       </Modal>
 
       {/* New Order Modal */}
-      <Modal isOpen={isOrderModalOpen} onClose={()=>setOrderModalOpen(false)} title="Nuevo Pedido a Proveedor">
+      <Modal isOpen={isOrderModalOpen} onClose={() => setOrderModalOpen(false)} title="Nuevo Pedido a Proveedor">
         <ModalBody>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Select
                 label="Producto"
                 value={selectedProdId.toString()}
-                onChange={e=>setSelectedProdId(Number(e.target.value))}
+                onChange={e => setSelectedProdId(Number(e.target.value))}
                 options={[
                   { value: '0', label: 'Seleccione...' },
-                  ...products.map(p=>({
+                  ...products.map(p => ({
                     value: p.idProducto.toString(),
                     label: p.nombre
                   }))
@@ -319,13 +352,13 @@ export const ProveedorPage: React.FC = () => {
                 label="Cantidad"
                 type="number"
                 value={orderQty.toString()}
-                onChange={e=>setOrderQty(Number(e.target.value))}
+                onChange={e => setOrderQty(Number(e.target.value))}
               />
               <Input
                 label="Precio Unit."
                 type="number"
                 value={orderUnitPrice.toString()}
-                onChange={e=>setOrderUnitPrice(Number(e.target.value))}
+                onChange={e => setOrderUnitPrice(Number(e.target.value))}
               />
               <Button onClick={addOrderItem}>Agregar ítem</Button>
             </div>
@@ -339,9 +372,9 @@ export const ProveedorPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orderItems.map((it,i)=>(
+                {orderItems.map((it, i) => (
                   <TableRow key={i}>
-                    <TableCell>{products.find(p=>p.idProducto===it.idProducto)?.nombre}</TableCell>
+                    <TableCell>{products.find(p => p.idProducto === it.idProducto)?.nombre}</TableCell>
                     <TableCell>{it.cantidad}</TableCell>
                     <TableCell>{it.precioUnitario.toFixed(2)}</TableCell>
                     <TableCell>{it.subtotal.toFixed(2)}</TableCell>
@@ -353,7 +386,7 @@ export const ProveedorPage: React.FC = () => {
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={()=>setOrderModalOpen(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setOrderModalOpen(false)}>Cancelar</Button>
           <Button onClick={submitOrder}>Crear Pedido</Button>
         </ModalFooter>
       </Modal>

@@ -13,6 +13,8 @@ export const InventoryPage: React.FC = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [estaEditando, setEstaEditando] = useState(false);
   const [itemActual, setItemActual] = useState<Partial<InventoryLote>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const {
     lotes,
@@ -72,8 +74,7 @@ export const InventoryPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Validar obligatorios
-    const campos = ['idProducto','codigoLote','fechaVencimiento','cantidad','precioUnitario'] as const;
+    const campos = ['idProducto', 'codigoLote', 'fechaVencimiento', 'cantidad', 'precioUnitario'] as const;
     for (const c of campos) {
       if (!itemActual[c]) {
         toast.error('Completa todos los campos obligatorios');
@@ -85,7 +86,7 @@ export const InventoryPage: React.FC = () => {
         await updateInventoryItem(itemActual.idLote!, itemActual as InventoryLote);
         toast.success('Lote actualizado correctamente');
       } else {
-        await addInventoryItem(itemActual as Omit<InventoryLote,'idLote'>);
+        await addInventoryItem(itemActual as Omit<InventoryLote, 'idLote'>);
         toast.success('Lote registrado exitosamente');
       }
       setModalAbierto(false);
@@ -93,6 +94,13 @@ export const InventoryPage: React.FC = () => {
       toast.error('Ocurrió un error. Intenta de nuevo');
     }
   };
+
+  // Paginación
+  const totalPages = Math.ceil(lotes.length / itemsPerPage);
+  const paginatedLotes = lotes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (error) {
     return <div className="p-4 text-red-600">Error: {error}</div>;
@@ -112,11 +120,36 @@ export const InventoryPage: React.FC = () => {
       </div>
 
       <InventoryTable
-        inventory={lotes}
+        inventory={paginatedLotes}
         isLoading={isLoading}
         onEditItem={handleEditar}
         onDeleteItem={handleEliminar}
       />
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center px-4 py-2 border-t text-sm space-x-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-gray-700">
+            Página {currentPage} de {totalPages}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      )}
 
       <Modal
         isOpen={modalAbierto}

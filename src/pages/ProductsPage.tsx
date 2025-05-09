@@ -64,10 +64,7 @@ export const ProductsPage: React.FC = () => {
     );
   }, [searchQuery, products]);
 
-  const indexOfLast = currentPage * productsPerPage;
-  const indexOfFirst = indexOfLast - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
-
+  
   const openAddModal = () => {
     setIsEditing(false);
     setCurrentProduct({ nombre: '', descripcion: '', stock: 0, precio: 0 });
@@ -99,41 +96,47 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-  if (!currentProduct.nombre || !currentProduct.descripcion
-    || !selectedUnidad || !selectedProveedor || !selectedCategoria
-  ) {
-    toast.error('Completa todos los campos antes de guardar');
-    return;
-  }
+    if (!currentProduct.nombre || !currentProduct.descripcion
+      || !selectedUnidad || !selectedProveedor || !selectedCategoria
+    ) {
+      toast.error('Completa todos los campos antes de guardar');
+      return;
+    }
 
-  const payload = {
-    nombre: currentProduct.nombre,
-    descripcion: currentProduct.descripcion,
-    stock: currentProduct.stock,
-    precio: currentProduct.precio,
-    idUnidad: selectedUnidad.idUnidad,
-    idProveedor: selectedProveedor.idProveedor,
-    idCategoria: selectedCategoria.idCategoria,
+    const payload = {
+      nombre: currentProduct.nombre,
+      descripcion: currentProduct.descripcion,
+      stock: currentProduct.stock,
+      precio: currentProduct.precio,
+      idUnidad: selectedUnidad.idUnidad,
+      idProveedor: selectedProveedor.idProveedor,
+      idCategoria: selectedCategoria.idCategoria,
+    };
+
+    const idSucursal = parseInt(localStorage.getItem('idSucursal') || '0', 10);
+
+    try {
+      if (isEditing && currentProduct.idProducto) {
+        console.log('ID a actualizar:', currentProduct.idProducto);
+        console.log('Payload:', payload);
+        await updateProduct(currentProduct.idProducto, payload);
+        toast.success('Producto actualizado');
+      } else {
+        await addProduct(payload, idSucursal); // Pasar idSucursal aquí
+        toast.success('Producto agregado');
+      }
+      setIsModalOpen(false);
+      await fetchProductsBySucursal().then(setFilteredProducts);
+    } catch {
+      toast.error('Error al guardar el producto');
+    }
   };
 
-  const idSucursal = parseInt(localStorage.getItem('idSucursal') || '0', 10);
-
-  try {
-    if (isEditing && currentProduct.idProducto) {
-      console.log('ID a actualizar:', currentProduct.idProducto);
-      console.log('Payload:', payload);
-      await updateProduct(currentProduct.idProducto, payload);
-      toast.success('Producto actualizado');
-    } else {
-      await addProduct(payload, idSucursal); // Pasar idSucursal aquí
-      toast.success('Producto agregado');
-    }
-    setIsModalOpen(false);
-    await fetchProductsBySucursal().then(setFilteredProducts);
-  } catch {
-    toast.error('Error al guardar el producto');
-  }
-};
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
 
   return (
     <div className="space-y-6 animate-fade-in p-4">
@@ -202,8 +205,28 @@ export const ProductsPage: React.FC = () => {
             )}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center px-4 py-2 border-t text-sm">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        )}
       </div>
-
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
