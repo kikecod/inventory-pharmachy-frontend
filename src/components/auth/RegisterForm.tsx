@@ -15,7 +15,7 @@ export const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [rol, setRol] = useState('Gerente');
+  const [rol, setRol] = useState('Administrador');
   const [error, setError] = useState<string | null>(null);
   
   const { register, isLoading } = useAuthStore();
@@ -121,10 +121,9 @@ export const RegisterForm: React.FC = () => {
               value={rol}
               onChange={(e) => setRol(e.target.value)}
               options={[
-                { value: 'Gerente', label: 'Gerente' },
                 { value: 'Administrador', label: 'Administrador' },
-                { value: 'Cajero', label: 'Cajero' },
-                { value: 'Proveedor', label: 'Proveedor' },
+                { value: 'Almacenero', label: 'Almacenero' },
+                { value: 'Vendedor', label: 'Vendedor' },
               ]}
               required
             />

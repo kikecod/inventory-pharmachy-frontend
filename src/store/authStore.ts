@@ -38,27 +38,27 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email: string, password: string) => {
     set({ isLoading: true });
-    
+
     try {
       const data = await authService.login({ email, password });
-      
+
       // Store token and user data in localStorage
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({
         id: data.usuario.id.toString(),
         name: data.usuario.nombre,
         email: data.usuario.email,
-        role: data.usuario.rol.toLowerCase(),
+        role: data.usuario.rol as 'Administrador' | 'Almacenero' | 'Vendedor',
       }));
-      
-      set({ 
+
+      set({
         user: {
           id: data.usuario.id.toString(),
           name: data.usuario.nombre,
           email: data.usuario.email,
-          role: data.usuario.rol.toLowerCase(),
-        }, 
-        isAuthenticated: true 
+          role: data.usuario.rol as 'Administrador' | 'Almacenero' | 'Vendedor',
+        },
+        isAuthenticated: true
       });
     } catch (error) {
       throw error;
@@ -66,10 +66,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
     }
   },
-  
+
   register: async (nombre: string, apellido: string, email: string, password: string, rol: string) => {
     set({ isLoading: true });
-    
+
     try {
       const data = await authService.register({
         nombre,
@@ -78,24 +78,24 @@ export const useAuthStore = create<AuthState>((set) => ({
         password,
         rol,
       });
-      
+
       // Store token and user data in localStorage
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({
         id: data.usuario.id.toString(),
         name: data.usuario.nombre,
         email: data.usuario.email,
-        role: data.usuario.rol.toLowerCase(),
+        role: data.usuario.rol as 'Administrador' | 'Almacenero' | 'Vendedor',
       }));
-      
-      set({ 
+
+      set({
         user: {
           id: data.usuario.id.toString(),
           name: data.usuario.nombre,
           email: data.usuario.email,
-          role: data.usuario.rol.toLowerCase(),
-        }, 
-        isAuthenticated: true 
+          role: data.usuario.rol as 'Administrador' | 'Almacenero' | 'Vendedor',
+        },
+        isAuthenticated: true
       });
     } catch (error) {
       throw error;
@@ -103,13 +103,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
     }
   },
-  
+
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     set({ user: null, isAuthenticated: false });
   },
-  
+
   updateProfile: (userData) => {
     set((state) => {
       const updatedUser = state.user ? { ...state.user, ...userData } : null;

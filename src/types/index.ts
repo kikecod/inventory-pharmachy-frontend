@@ -2,8 +2,20 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'staff' | 'pharmacist';
+  role: 'Administrador' | 'Almacenero' | 'Vendedor'; 
   avatar?: string;
+};
+
+export const roles = {
+  ADMINISTRADOR: 'Administrador',
+  ALMACENERO: 'Almacenero',
+  VENDEDOR: 'Vendedor',
+};
+
+export const permissions = {
+  VIEW_DASHBOARD: [roles.ADMINISTRADOR, roles.ALMACENERO],
+  MANAGE_INVENTORY: [roles.ADMINISTRADOR, roles.ALMACENERO],
+  PROCESS_SALES: [roles.ADMINISTRADOR, roles.VENDEDOR],
 };
 
 export type Product = {

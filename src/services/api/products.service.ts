@@ -70,15 +70,18 @@ export const productsService = {
     };
   },
 
-  async createProduct(product: Omit<Product, 'idProducto'>): Promise<Product> {
+  async createProduct(product: Omit<Product, 'idProducto'>, idSucursal: number): Promise<Product> {
     const token = localStorage.getItem('token') ?? undefined;
     const response = await fetch(`${API_URL}/api/productos`, {
-      method: 'POST',
-      headers: getHeaders(token),
-      body: JSON.stringify(product),
+        method: 'POST',
+        headers: {
+            ...getHeaders(token),
+            'Sucursal-ID': idSucursal.toString(),
+        },
+        body: JSON.stringify(product),
     });
     return handleResponse(response);
-  },
+},
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product> {
     console.log('Actualizando producto ID:', id, product);

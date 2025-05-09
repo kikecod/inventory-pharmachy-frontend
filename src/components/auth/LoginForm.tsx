@@ -12,22 +12,30 @@ export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
-  const { login, isLoading } = useAuthStore();
+
+  const { login, isLoading } = useAuthStore(); // Método `login` del authStore
   const navigate = useNavigate();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
-      await login(email, password);
+      // Llama al método `login` del authStore, que debería manejar la autenticación con el backend
+      const user = await login(email, password);
+
+      // Verifica si el usuario tiene un rol válido (opcional)
+      if (!user.role) {
+        throw new Error('El usuario no tiene un rol asignado.');
+      }
+
+      // Redirige al dashboard o a la página correspondiente
       navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.');
     }
   };
-  
+
   return (
     <div className="max-w-md w-full mx-auto">
       <Card>

@@ -10,7 +10,7 @@ interface ProductState {
   error: string | null;
   fetchProducts: () => Promise<Product[]>;
   fetchCategories: () => Promise<void>;
-  addProduct: (product: Omit<Product, 'idProducto'>) => Promise<void>;
+  addProduct: (product: Omit<Product, 'idProducto'>, idSucursal: number) => Promise<void>;
   fetchProductsBySucursal: () => Promise<void>;
   updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
@@ -63,20 +63,20 @@ export const useProductStore = create<ProductState>((set) => ({
     }
   },
 
-  addProduct: async (product: Omit<Product, 'idProducto'>) => {
-    set({ isLoading: true, error: null });
+  addProduct: async (product: Omit<Product, 'idProducto'>, idSucursal: number) => {
+  set({ isLoading: true, error: null });
 
-    try {
-      const newProduct = await productsService.createProduct(product);
-      set((state) => ({
-        products: [...state.products, newProduct],
-        isLoading: false,
-      }));
-    } catch (error) {
-      set({ error: 'Failed to add product', isLoading: false });
-      throw error;
-    }
-  },
+  try {
+    const newProduct = await productsService.createProduct(product, idSucursal); // Pasar idSucursal
+    set((state) => ({
+      products: [...state.products, newProduct],
+      isLoading: false,
+    }));
+  } catch (error) {
+    set({ error: 'Failed to add product', isLoading: false });
+    throw error;
+  }
+},
 
   updateProduct: async (id: number, updates: Partial<Product>) => {
     set({ isLoading: true, error: null });

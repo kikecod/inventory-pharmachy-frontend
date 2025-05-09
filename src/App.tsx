@@ -23,6 +23,7 @@ import { UsuariosPage } from './pages/UsuariosPage';
 
 // Auth store
 import { useAuthStore } from './store/authStore';
+import RoleProtectedRoute from './components/auth/RoleProtectedRoute';
 
 function App() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -73,16 +74,88 @@ function App() {
         {/* Protected Routes */}
         <Route path="/" element={isAuthenticated ? <AppLayout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
-          <Route path="sucursal" element={<SucursalPage />} />
-          <Route path="proveedor" element={<ProveedorPage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="sales" element={<SalesPage />} />
-          <Route path="customers" element={<CustomersPage />} />
-          <Route path="usuarios" element={<UsuariosPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          
+          {/* Rutas protegidas por rol */}
+          <Route
+            path="sucursal"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero', 'Vendedor']}>
+                <SucursalPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="proveedor"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero']}>
+                <ProveedorPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="dashboard"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador']}>
+                <DashboardPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero']}>
+                <InventoryPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="products"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero', 'Vendedor']}>
+                <ProductsPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="sales"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Vendedor']}>
+                <SalesPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="customers"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Vendedor']}>
+                <CustomersPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="usuarios"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador']}>
+                <UsuariosPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero', 'Vendedor']}>
+                <ProfilePage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <RoleProtectedRoute rolesAllowed={['Administrador', 'Almacenero', 'Vendedor']}>
+                <SettingsPage />
+              </RoleProtectedRoute>
+            }
+          />
         </Route>
         
         {/* Fallback route */}

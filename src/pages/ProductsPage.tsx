@@ -99,37 +99,41 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!currentProduct.nombre || !currentProduct.descripcion
-      || !selectedUnidad || !selectedProveedor || !selectedCategoria
-    ) {
-      toast.error('Completa todos los campos antes de guardar');
-      return;
-    }
-    const payload = {
-      nombre: currentProduct.nombre,
-      descripcion: currentProduct.descripcion,
-      stock: currentProduct.stock,
-      precio: currentProduct.precio,
-      idUnidad: selectedUnidad.idUnidad,
-      idProveedor: selectedProveedor.idProveedor,
-      idCategoria: selectedCategoria.idCategoria,
-    };
-    try {
-      if (isEditing && currentProduct.idProducto) {
-        console.log('ID a actualizar:', currentProduct.idProducto);
-        console.log('Payload:', payload);
-        await updateProduct(currentProduct.idProducto, payload);
-        toast.success('Producto actualizado');
-      } else {
-        await addProduct(payload);
-        toast.success('Producto agregado');
-      }
-      setIsModalOpen(false);
-      await fetchProductsBySucursal().then(setFilteredProducts);
-    } catch {
-      toast.error('Error al guardar el producto');
-    }
+  if (!currentProduct.nombre || !currentProduct.descripcion
+    || !selectedUnidad || !selectedProveedor || !selectedCategoria
+  ) {
+    toast.error('Completa todos los campos antes de guardar');
+    return;
+  }
+
+  const payload = {
+    nombre: currentProduct.nombre,
+    descripcion: currentProduct.descripcion,
+    stock: currentProduct.stock,
+    precio: currentProduct.precio,
+    idUnidad: selectedUnidad.idUnidad,
+    idProveedor: selectedProveedor.idProveedor,
+    idCategoria: selectedCategoria.idCategoria,
   };
+
+  const idSucursal = parseInt(localStorage.getItem('idSucursal') || '0', 10);
+
+  try {
+    if (isEditing && currentProduct.idProducto) {
+      console.log('ID a actualizar:', currentProduct.idProducto);
+      console.log('Payload:', payload);
+      await updateProduct(currentProduct.idProducto, payload);
+      toast.success('Producto actualizado');
+    } else {
+      await addProduct(payload, idSucursal); // Pasar idSucursal aquí
+      toast.success('Producto agregado');
+    }
+    setIsModalOpen(false);
+    await fetchProductsBySucursal().then(setFilteredProducts);
+  } catch {
+    toast.error('Error al guardar el producto');
+  }
+};
 
   return (
     <div className="space-y-6 animate-fade-in p-4">
