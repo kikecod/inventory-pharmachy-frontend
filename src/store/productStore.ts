@@ -29,7 +29,7 @@ export const useProductStore = create<ProductState>((set) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const products = await productsService.getProducts();
+      const products = await productsService.getProductsBySucursal();
       set({ products, isLoading: false });
       return products;
     } catch (error) {
@@ -37,16 +37,17 @@ export const useProductStore = create<ProductState>((set) => ({
       throw error;
     }
   },
-  fetchProductsBySucursal: async (): Promise<Product[]> => {
+  fetchProductsBySucursal: async () => {
     set({ isLoading: true, error: null });
-  
     try {
-      const products = await productsService.getProductsBySucursal();
-      set({ products, isLoading: false });
-      return products;
-    } catch (error) {
-      set({ error: 'Error al cargar productos por sucursal', isLoading: false });
-      throw error;
+      const fetched = await productsService.getProductsBySucursal(); // tu llamada real
+      set({ products: fetched }); // importante para estado global
+      return fetched;
+    } catch (e: any) {
+      set({ error: e.message });
+      return [];
+    } finally {
+      set({ isLoading: false });
     }
   },
 
@@ -79,9 +80,21 @@ export const useProductStore = create<ProductState>((set) => ({
 
   updateProduct: async (id: number, updates: Partial<Product>) => {
     set({ isLoading: true, error: null });
-
+  
     try {
-      const updatedProduct = await productsService.updateProduct(id, updates);
+      // Separamos el precio del resto del payload
+      const { precio, ...resto } = updates;
+  
+      // 1. Actualizar los datos generales del producto
+      const updatedProduct = await productsService.updateProduct(id, resto);
+  
+      // 2. Si hay un precio definido, actualizarlo por separado
+      if (precio !== undefined) {
+        await productsService.updateProductPrice(id, precio);
+        updatedProduct.precio = precio; // actualizamos el precio localmente
+      }
+  
+      // 3. Actualizar el estado global de productos
       set((state) => ({
         products: state.products.map((product) =>
           product.idProducto === id ? updatedProduct : product

@@ -165,3 +165,8 @@ export interface StockBySucursal {
   unidad: string;
   categoria: string;
 }
+export interface Unidad {
+  idUnidad: number;
+  descripcion: string;
+  unipcaja: number;
+}

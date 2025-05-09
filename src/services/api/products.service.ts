@@ -81,13 +81,28 @@ export const productsService = {
   },
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product> {
+    console.log('Actualizando producto ID:', id, product);
     const token = localStorage.getItem('token') ?? undefined;
+    console.log('⛳ Haciendo PUT al backend con ID:', id);
+    console.log('⛳ Payload:', product);
     const response = await fetch(`${API_URL}/api/productos/${id}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(product),
     });
     return handleResponse(response);
+  },
+  async updateProductPrice(id: number, precioUnitario: number): Promise<void> {
+    const token = localStorage.getItem('token') ?? undefined;
+    const response = await fetch(`${API_URL}/api/productos/${id}/precio`, {
+      method: 'PUT',
+      headers: getHeaders(token),
+      body: JSON.stringify({ precioUnitario }),
+    });
+  
+    if (!response.ok) {
+      throw new Error('Error al actualizar el precio');
+    }
   },
 
   async deleteProduct(id: number): Promise<void> {

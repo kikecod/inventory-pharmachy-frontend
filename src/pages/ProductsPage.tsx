@@ -1,19 +1,18 @@
 // File: src/pages/ProductsPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalBody, ModalFooter } from '../components/ui/Modal';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Combobox } from '@headlessui/react';
 import { useProductStore } from '../store/productStore';
-import { Product } from '../types';
+import { useUnidadStore } from '../store/unidadStore';
+import { useProveedorStore } from '../store/proveedorStore';
+import { useCategoriaStore } from '../store/categoriaStore';
+import { Product, Unidad, Provider, Category } from '../types';
 import { toast } from 'react-hot-toast';
 
 export const ProductsPage: React.FC = () => {
@@ -22,12 +21,11 @@ export const ProductsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+  const [selectedUnidad, setSelectedUnidad] = useState<Unidad | null>(null);
+  const [selectedProveedor, setSelectedProveedor] = useState<Provider | null>(null);
+  const [selectedCategoria, setSelectedCategoria] = useState<Category | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
-
-  const indexOfLast = currentPage * productsPerPage;
-  const indexOfFirst = indexOfLast - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
 
   const {
     products,
@@ -39,24 +37,24 @@ export const ProductsPage: React.FC = () => {
     deleteProduct
   } = useProductStore();
 
-  // Cargar productos por sucursal al montar
-  useEffect(() => {
-    (async () => {
-      try {
-        const fetched = await fetchProductsBySucursal();
-        setFilteredProducts(fetched);
-      } catch {
-        toast.error('Error al cargar productos por sucursal');
-      }
-    })();
-  }, [fetchProductsBySucursal]);
+  const { unidades, fetchUnidades } = useUnidadStore();
+  const { providers, fetchProviders } = useProveedorStore();
+  const { categorias, fetchCategorias } = useCategoriaStore();
 
-  // Filtrado por búsqueda
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredProducts(products);
-      return;
-    }
+    fetchProductsBySucursal()
+      .then((res) => {
+        console.log('Productos recibidos:', res); // ✅ <- Agrega esto
+        setFilteredProducts(res);
+      })
+      .catch(() => toast.error('Error al cargar productos'));
+    fetchUnidades();
+    fetchProviders();
+    fetchCategorias();
+  }, [fetchProductsBySucursal, fetchUnidades, fetchProviders, fetchCategorias]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) return setFilteredProducts(products);
     const q = searchQuery.toLowerCase();
     setFilteredProducts(
       products.filter(p =>
@@ -66,173 +64,132 @@ export const ProductsPage: React.FC = () => {
     );
   }, [searchQuery, products]);
 
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const indexOfLast = currentPage * productsPerPage;
+  const indexOfFirst = indexOfLast - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
 
-  // Paginación
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  // Modal Agregar/Editar
   const openAddModal = () => {
     setIsEditing(false);
-    setCurrentProduct({
-      nombre: '',
-      descripcion: '',
-      stock: 0,
-      unidad: '',
-      proveedor: '',
-      categoria: '',
-      precio: 0,
-    });
+    setCurrentProduct({ nombre: '', descripcion: '', stock: 0, precio: 0 });
+    setSelectedUnidad(null);
+    setSelectedProveedor(null);
+    setSelectedCategoria(null);
     setIsModalOpen(true);
   };
+
   const openEditModal = (product: Product) => {
     setIsEditing(true);
     setCurrentProduct(product);
+    setSelectedUnidad(unidades.find(u => u.idUnidad === product.idUnidad) || null);
+    setSelectedProveedor(providers.find(p => p.idProveedor === product.idProveedor) || null);
+    setSelectedCategoria(categorias.find(c => c.idCategoria === product.idCategoria) || null);
     setIsModalOpen(true);
   };
 
-  // Eliminar
   const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
+      console.log('ID a eliminar:', id);
       await deleteProduct(id);
-      toast.success('Producto eliminado correctamente');
-      setFilteredProducts(prev => prev.filter(p => p.idProducto !== id));
+      await fetchProductsBySucursal().then(setFilteredProducts);
+      toast.success('Producto eliminado');
     } catch {
       toast.error('Error al eliminar producto');
     }
   };
 
-  // Cambios en inputs
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    setCurrentProduct(prev => ({
-      ...prev,
-      [name]: type === 'number' ? parseFloat(value) : value
-    }));
-  };
-
-  // Guardar
   const handleSubmit = async () => {
-    if (!currentProduct.nombre || !currentProduct.descripcion) {
-      toast.error('Por favor, completa todos los campos obligatorios');
+    if (!currentProduct.nombre || !currentProduct.descripcion
+      || !selectedUnidad || !selectedProveedor || !selectedCategoria
+    ) {
+      toast.error('Completa todos los campos antes de guardar');
       return;
     }
+    const payload = {
+      nombre: currentProduct.nombre,
+      descripcion: currentProduct.descripcion,
+      stock: currentProduct.stock,
+      precio: currentProduct.precio,
+      idUnidad: selectedUnidad.idUnidad,
+      idProveedor: selectedProveedor.idProveedor,
+      idCategoria: selectedCategoria.idCategoria,
+    };
     try {
       if (isEditing && currentProduct.idProducto) {
-        await updateProduct(currentProduct.idProducto, currentProduct);
-        toast.success('Producto actualizado correctamente');
+        console.log('ID a actualizar:', currentProduct.idProducto);
+        console.log('Payload:', payload);
+        await updateProduct(currentProduct.idProducto, payload);
+        toast.success('Producto actualizado');
       } else {
-        await addProduct(currentProduct as Omit<Product, 'idProducto'>);
-        toast.success('Producto agregado correctamente');
+        await addProduct(payload);
+        toast.success('Producto agregado');
       }
       setIsModalOpen(false);
+      await fetchProductsBySucursal().then(setFilteredProducts);
     } catch {
-      toast.error('Ocurrió un error. Intenta de nuevo.');
+      toast.error('Error al guardar el producto');
     }
   };
-
-  // Renderizado de estados
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <p className="text-error-600 text-lg mb-4">Error al cargar productos</p>
-        <Button onClick={() => fetchProductsBySucursal()}>Reintentar</Button>
-      </div>
-    );
-  }
-  if (isLoading) {
-    return (
-      <div className="flex flex-col space-y-4">
-        <div className="h-10 bg-gray-100 animate-pulse rounded w-1/3" />
-        <div className="h-64 bg-gray-100 animate-pulse rounded" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in p-4">
       <div className="pb-5 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">
-          Gestión de Productos
-        </h3>
-        <p className="mt-2 text-sm text-gray-500">
-          Administra los productos, el stock y categorías
-        </p>
+        <h3 className="text-lg font-medium text-gray-900">Gestión de Productos</h3>
+        <p className="mt-2 text-sm text-gray-500">Administra productos, unidades y proveedores</p>
       </div>
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="relative w-full md:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+      <div className="flex justify-between items-center mb-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2 top-2.5 text-gray-400" size={18} />
           <Input
             type="text"
             placeholder="Buscar productos..."
-            className="pl-10"
+            className="pl-8"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button leftIcon={<Plus size={16} />} onClick={openAddModal}>
-          Agregar Producto
-        </Button>
+        <Button leftIcon={<Plus />} onClick={openAddModal}>Agregar Producto</Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
               <TableHead>Stock</TableHead>
+              <TableHead>Precio</TableHead>
               <TableHead>Unidad</TableHead>
               <TableHead>Proveedor</TableHead>
               <TableHead>Categoría</TableHead>
-              <TableHead>Precio</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                   No se encontraron productos.
                 </TableCell>
               </TableRow>
             ) : (
-              currentProducts.map(product => (
-                <TableRow key={product.idProducto}>
-                  <TableCell>{product.nombre}</TableCell>
-                  <TableCell>{product.descripcion}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>{product.unidad}</TableCell>
-                  <TableCell>{product.proveedor}</TableCell>
-                  <TableCell>{product.categoria}</TableCell>
-                  <TableCell>{product.precio.toFixed(2)} Bs</TableCell>
+              currentProducts.map(p => (
+                <TableRow key={p.idProducto}>
+                  <TableCell>{p.nombre}</TableCell>
+                  <TableCell>{p.descripcion}</TableCell>
+                  <TableCell>{p.stock}</TableCell>
+                  <TableCell>{p.precio?.toFixed(2)} Bs</TableCell>
+                  <TableCell>{p.unidad}</TableCell>
+                  <TableCell>{p.proveedor}</TableCell>
+                  <TableCell>{p.categoria}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        leftIcon={<Edit size={16} />}
-                        onClick={() => openEditModal(product)}
-                      >
-                        Editar
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEditModal(p)}>
+                        <Edit size={16} />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        leftIcon={<Trash2 size={16} />}
-                        className="text-error-600 hover:bg-error-50"
-                        onClick={() => handleDelete(product.idProducto)}
-                      >
-                        Eliminar
+                      <Button size="sm" variant="outline" className="text-error-600" onClick={() => handleDelete(p.idProducto)}>
+                        <Trash2 size={16} />
                       </Button>
                     </div>
                   </TableCell>
@@ -241,26 +198,6 @@ export const ProductsPage: React.FC = () => {
             )}
           </TableBody>
         </Table>
-
-        <div className="flex justify-between items-center p-4">
-          <Button
-            variant="outline"
-            onClick={handlePrev}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </Button>
-          <span>
-            Página {currentPage} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            onClick={handleNext}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-          </Button>
-        </div>
       </div>
 
       <Modal
@@ -271,67 +208,58 @@ export const ProductsPage: React.FC = () => {
       >
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nombre"
-              name="nombre"
-              value={currentProduct.nombre || ''}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Descripción"
-              name="descripcion"
-              value={currentProduct.descripcion || ''}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Stock"
-              type="number"
-              name="stock"
-              value={currentProduct.stock?.toString() || '0'}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Unidad"
-              name="unidad"
-              value={currentProduct.unidad || ''}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Proveedor"
-              name="proveedor"
-              value={currentProduct.proveedor || ''}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Categoría"
-              name="categoria"
-              value={currentProduct.categoria || ''}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Precio (Bs)"
-              type="number"
-              step="0.01"
-              name="precio"
-              value={currentProduct.precio?.toString() || '0'}
-              onChange={handleChange}
-              required
-            />
+            <Input label="Nombre" value={currentProduct.nombre || ''} onChange={e => setCurrentProduct(p => ({ ...p, nombre: e.target.value }))} />
+            <Input label="Descripción" value={currentProduct.descripcion || ''} onChange={e => setCurrentProduct(p => ({ ...p, descripcion: e.target.value }))} />
+            <Input label="Stock" type="number" value={currentProduct.stock?.toString() || ''} onChange={e => setCurrentProduct(p => ({ ...p, stock: parseInt(e.target.value) || 0 }))} />
+            <Input label="Precio (Bs)" type="number" value={currentProduct.precio?.toString() || ''} onChange={e => setCurrentProduct(p => ({ ...p, precio: parseFloat(e.target.value) || 0 }))} />
+
+            <div>
+              <Combobox value={selectedUnidad} onChange={setSelectedUnidad}>
+                <Combobox.Label>Unidad</Combobox.Label>
+                <Combobox.Input className="w-full border rounded px-2 py-1" displayValue={(u: Unidad) => u?.descripcion || ''} />
+                <Combobox.Options className="border rounded mt-1 max-h-40 overflow-auto">
+                  {unidades.map(u => (
+                    <Combobox.Option key={u.idUnidad} value={u} className={({ active }) => `cursor-pointer px-2 py-1 ${active ? 'bg-blue-100' : ''}`}>
+                      {u.descripcion}
+                    </Combobox.Option>
+                  ))}
+                </Combobox.Options>
+              </Combobox>
+            </div>
+
+            <div>
+              <Combobox value={selectedProveedor} onChange={setSelectedProveedor}>
+                <Combobox.Label>Proveedor</Combobox.Label>
+                <Combobox.Input className="w-full border rounded px-2 py-1" displayValue={(p: Provider) => p?.nombre || ''} />
+                <Combobox.Options className="border rounded mt-1 max-h-40 overflow-auto">
+                  {providers.map(p => (
+                    <Combobox.Option key={p.idProveedor} value={p} className={({ active }) => `cursor-pointer px-2 py-1 ${active ? 'bg-blue-100' : ''}`}>
+                      {p.nombre}
+                    </Combobox.Option>
+                  ))}
+                </Combobox.Options>
+              </Combobox>
+            </div>
+
+            <div>
+              <Combobox value={selectedCategoria} onChange={setSelectedCategoria}>
+                <Combobox.Label>Categoría</Combobox.Label>
+                <Combobox.Input className="w-full border rounded px-2 py-1" displayValue={(c: Category) => c?.nombre || ''} />
+                <Combobox.Options className="border rounded mt-1 max-h-40 overflow-auto">
+                  {categorias.map(c => (
+                    <Combobox.Option key={c.idCategoria} value={c} className={({ active }) => `cursor-pointer px-2 py-1 ${active ? 'bg-blue-100' : ''}`}>
+                      {c.nombre}
+                    </Combobox.Option>
+                  ))}
+                </Combobox.Options>
+              </Combobox>
+            </div>
           </div>
         </ModalBody>
+
         <ModalFooter>
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit}>
-            {isEditing ? 'Actualizar Producto' : 'Agregar Producto'}
-          </Button>
+          <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+          <Button onClick={handleSubmit}>{isEditing ? 'Actualizar Producto' : 'Agregar Producto'}</Button>
         </ModalFooter>
       </Modal>
     </div>
