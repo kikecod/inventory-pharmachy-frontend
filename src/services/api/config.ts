@@ -1,5 +1,5 @@
 // API configuration
-export const API_URL = 'http://localhost:8082';
+export const API_URL = 'https://inventory-pharmachy.onrender.com';
 
 // Common headers
 export const getHeaders = (token?: string) => {
