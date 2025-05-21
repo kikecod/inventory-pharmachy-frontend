@@ -75,5 +75,25 @@ export const salesService = {
       body: JSON.stringify(saleData),
     });
     return handleResponse(response);
+  },
+  // En services/api/sales.service.ts
+  async generateReport(data: ReporteRequest): Promise<Blob> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_URL}/api/ventas/reporte`, {
+    method: 'POST',
+    headers: {
+      ...getHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  // ⚠️ IMPORTANTE: Manejar errores antes de pedir el blob
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Error al generar reporte');
+  }
+
+  return response.blob();
   }
 };
