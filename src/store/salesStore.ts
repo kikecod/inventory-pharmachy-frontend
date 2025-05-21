@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Sale, SaleItem } from '../types';
 import { salesService } from '../services/api/sales.service';
+import { toast } from 'react-hot-toast';
 
 interface SalesState {
   sales: Sale[];
@@ -17,6 +18,8 @@ interface SalesState {
   updateItemQuantity: (productId: string, quantity: number) => void;
   completeSale: (clienteId: number, customerName: string, paymentMethod: Sale['paymentMethod']) => Promise<void>;
   cancelCurrentSale: () => void;
+  isGeneratingReport: boolean;
+  generateReport: (data: ReporteRequest) => Promise<void>;
 }
 
 const emptySale: Omit<Sale, 'id'> = {
@@ -263,4 +266,34 @@ export const useSalesStore = create<SalesState>((set, get) => ({
   cancelCurrentSale: () => {
     set({ currentSale: null });
   },
+  
+isGeneratingReport: false,
+
+generateReport: async (data) => {
+  set({ isGeneratingReport: true });
+  try {
+    const blob = await salesService.generateReport(data);
+
+    // ✅ Verificación explícita del tipo
+    if (!(blob instanceof Blob)) {
+      throw new Error('El servidor no devolvió un archivo válido');
+    }
+
+    // ✅ Crear URL y descargar archivo
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reporte-ventas.${data.formato}`;
+    a.target = '_blank';
+    a.click();
+
+    toast.success('Reporte generado correctamente');
+  } catch (error) {
+    console.error('Error al generar reporte:', error);
+    toast.error(`Error al generar el reporte: ${(error as Error).message}`);
+  } finally {
+    set({ isGeneratingReport: false });
+  }
+  }
+  
 }));

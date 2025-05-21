@@ -24,6 +24,7 @@ import { toast } from 'react-hot-toast';
 import { customersService } from '../services/api/customer.service';
 import { salesService } from '../services/api/sales.service';
 
+
 export const SalesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -39,6 +40,13 @@ export const SalesPage: React.FC = () => {
   const [clienteId, setClienteId] = useState<number | null>(null);
   const [isAddClientModalOpen, setAddClientModalOpen] = useState(false);
   const [customerCI, setCustomerCI] = useState('');
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [formatoReporte, setFormatoReporte] = useState<'pdf' | 'csv'>('pdf');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const { generateReport, isGeneratingReport } = useSalesStore();
+
+  
 
   const { 
     sales, 
@@ -197,6 +205,34 @@ export const SalesPage: React.FC = () => {
       toast.error('Error al completar la venta');
     }
   };
+  const handleGenerateReport = async () => {
+  if (!fechaInicio || !fechaFin) {
+    toast.error('Selecciona un rango de fechas válido');
+    return;
+  }
+
+  try {
+    const blob = await salesService.generateReport({
+      fechaInicio,
+      fechaFin,
+      formato: formatoReporte,
+    });
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.download = `reporte-ventas.${formatoReporte}`;
+    a.click();
+
+    toast.success('Reporte generado correctamente');
+    setIsReportModalOpen(false);
+  } catch (error) {
+    console.error('Error generando el reporte:', error);
+    toast.error('Error al generar el reporte');
+  }
+  };
 
   const handleCancelSale = () => {
     if (window.confirm('¿Cancelar la venta? Se eliminarán todos los artículos.')) {
@@ -249,12 +285,16 @@ export const SalesPage: React.FC = () => {
           />
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsReportModalOpen(true)}>
+            Generar Reporte
+          </Button>
           <Button variant="outline" leftIcon={<Filter size={16} />}>
             Filtrar
           </Button>
           <Button leftIcon={<Plus size={16} />} onClick={handleStartNewSale}>
             Nueva Venta
           </Button>
+      
         </div>
       </div>
 
@@ -578,6 +618,77 @@ export const SalesPage: React.FC = () => {
             }
           }}>
             Guardar
+          </Button>
+        </ModalFooter>
+      </Modal>
+      <Modal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        title="Generar Reporte de Ventas"
+        maxWidth="md"
+      >
+        <ModalBody>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Fecha de Inicio"
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+              <Input
+                label="Fecha de Fin"
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[1, 5, 10, 30].map((dias) => (
+                <Button
+                  key={dias}
+                  variant="ghost"
+                  onClick={() => {
+                    const fin = new Date();
+                    const ini = new Date();
+                    ini.setDate(fin.getDate() - dias);
+                    setFechaInicio(ini.toISOString().slice(0, 10));
+                    setFechaFin(fin.toISOString().slice(0, 10));
+                  }}
+                >
+                  Últimos {dias} días
+                </Button>
+              ))}
+            </div>
+
+            <Select
+              label="Formato"
+              value={formatoReporte}
+              onChange={(e) => setFormatoReporte(e.target.value as 'pdf' | 'csv')}
+              options={[
+                { value: 'pdf', label: 'PDF' },
+                { value: 'csv', label: 'CSV' },
+              ]}
+            />
+          </div>
+        </ModalBody>
+
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={isGeneratingReport}
+            onClick={() =>
+              generateReport({
+                fechaInicio,
+                fechaFin,
+                formato: formatoReporte,
+              })
+            }
+          >
+            {isGeneratingReport ? 'Generando...' : 'Generar'}
           </Button>
         </ModalFooter>
       </Modal>

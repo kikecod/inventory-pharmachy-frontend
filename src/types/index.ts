@@ -220,3 +220,10 @@ export interface ChangePasswordSelfDTO {
 export interface ChangeRoleDTO {
   rol: string;
 }
+export type ReporteFormato = 'pdf' | 'csv';
+
+export interface ReporteRequest {
+  fechaInicio: string; // formato YYYY-MM-DD
+  fechaFin: string;
+  formato: ReporteFormato;
+}
