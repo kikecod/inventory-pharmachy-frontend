@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile, closeMobileMenu }) =
         {!collapsed ? (
           <div className="flex items-center gap-2">
             <Heart size={24} className="text-primary-600" />
-            <span className="text-xl font-semibold text-gray-900">PharmaSys</span>
+            <span className="text-xl font-semibold text-gray-900">Sistema Farmacia</span>
           </div>
         ) : (
           <div className="flex justify-center w-full">
